@@ -115,6 +115,52 @@ _VOTER_REG_PATTERNS = [
 ]
 _VOTER_REG_RE = [re.compile(p, re.IGNORECASE) for p in _VOTER_REG_PATTERNS]
 
+# 10. EVM / VVPAT — what it is and how it works
+_EVM_PATTERNS = [
+    r"\b(what\s*is|explain|how\s*does|describe|tell\s*me\s*about|about)\s*(an?\s*)?(evm|electronic\s*voting\s*machine)\b",
+    r"\b(what\s*is|explain|how\s*does|describe|tell\s*me\s*about|about)\s*(an?\s*)?vvpat\b",
+    r"\bevm\s*(and|or|&)\s*vvpat\b",
+    r"\bvvpat\s*(and|or|&)\s*evm\b",
+    r"\bevm\s*(work|works|function|machine|voting)\b",
+    r"\belectronic\s*voting\s*machine\b",
+]
+_EVM_RE = [re.compile(p, re.IGNORECASE) for p in _EVM_PATTERNS]
+
+# 11. NOTA — None of the Above
+_NOTA_PATTERNS = [
+    r"\b(what\s*is|explain|tell\s*me\s*about|about|describe)\s*nota\b",
+    r"\bnone\s*of\s*the\s*above\b",
+]
+_NOTA_RE = [re.compile(p, re.IGNORECASE) for p in _NOTA_PATTERNS]
+
+# 12. Coalition government
+_COALITION_PATTERNS = [
+    r"\b(what\s*is|explain|tell\s*me\s*about|about|describe)\s*(a?\s*)?coalition(\s*government)?\b",
+    r"\bcoalition\s*(government|politics|rule|ministry)\b",
+    r"\bno\s*(single\s*)?party\s*(gets?|has|wins?)\s*(a?\s*)?majority\b",
+    r"\bhung\s*(parliament|house|assembly)\b",
+]
+_COALITION_RE = [re.compile(p, re.IGNORECASE) for p in _COALITION_PATTERNS]
+
+# 13. Polling day — what happens on voting day
+_POLLING_DAY_PATTERNS = [
+    r"\b(explain|what\s*happens?|describe|how\s*to\s*vote)\s*(on\s*)?(polling|voting)\s*day\b",
+    r"\bpolling\s*(day|booth|station|process|procedure)\b",
+    r"\bwhat\s*happens?\s*(at|in)\s*(the\s*)?(poll(ing)?\s*booth|voting\s*booth|polling\s*station)\b",
+    r"\bvoting\s*(process|procedure|step|day)\b",
+]
+_POLLING_DAY_RE = [re.compile(p, re.IGNORECASE) for p in _POLLING_DAY_PATTERNS]
+
+# 14. Voter list / electoral roll check
+_VOTER_LIST_PATTERNS = [
+    r"\b(how\s*(do|can|to)\s*(i|we|one)\s*)?(check|find|search|verify|look\s*up)\s*(my\s*)?name\s*(in|on)\s*(the\s*)?(voter|electoral)\s*(list|roll)\b",
+    r"\b(check|find|search|verify)\s*(my\s*)?(voter\s*list|electoral\s*roll)\b",
+    r"\b(find|check|locate)\s*(my\s*)?(polling\s*(booth|station)|booth\s*number)\b",
+    r"\belectoral\s*roll\b",
+    r"\bam\s*i\s*(registered|enrolled|in\s*(the\s*)?voter\s*list)\b",
+]
+_VOTER_LIST_RE = [re.compile(p, re.IGNORECASE) for p in _VOTER_LIST_PATTERNS]
+
 # ---------------------------------------------------------------------------
 # Direct response builders
 # ---------------------------------------------------------------------------
@@ -157,6 +203,71 @@ VOTER_REGISTRATION_RESPONSE = (
     "8. Download or collect your **Voter ID (EPIC card)** from the BLO (Booth Level Officer) or via the portal\n\n"
     "**On polling day**, carry your Voter ID or any of the 12 approved alternate photo IDs.\n\n"
     "For official guidance: [eci.gov.in](https://eci.gov.in) | [voters.eci.gov.in](https://voters.eci.gov.in)"
+)
+
+EVM_VVPAT_RESPONSE = (
+    "**EVM and VVPAT — How Voting Works in India**\n\n"
+    "**EVM (Electronic Voting Machine)**\n"
+    "- An EVM is an electronic device used to record votes in Indian elections.\n"
+    "- On the ballot unit, each candidate's name, party symbol, and a blue button are displayed.\n"
+    "- The voter presses the button next to their chosen candidate's name and symbol.\n"
+    "- A beep sound and a red light confirm the vote has been recorded.\n\n"
+    "**VVPAT (Voter Verifiable Paper Audit Trail)**\n"
+    "- VVPAT is a device attached to the EVM that provides a paper confirmation.\n"
+    "- After a voter presses the button, a printed slip showing the candidate's name and symbol \n"
+    "  is visible through a small glass window for **7 seconds**.\n"
+    "- This slip then drops into a sealed box inside the VVPAT — the voter does **not** take it.\n"
+    "- It lets voters confirm their vote was recorded as intended.\n\n"
+    "For official details: [eci.gov.in](https://eci.gov.in)"
+)
+
+NOTA_RESPONSE = (
+    "**NOTA — None of the Above**\n\n"
+    "- **NOTA** stands for **None of the Above**.\n"
+    "- It is a voting option available on the EVM (Electronic Voting Machine) at the end of the candidate list.\n"
+    "- Choosing NOTA means the voter does not prefer any of the listed candidates.\n"
+    "- NOTA votes are counted and reported, but they do not help any candidate win.\n"
+    "- It was introduced by the Supreme Court of India in 2013 to give voters a way to reject all candidates.\n\n"
+    "NOTA does not invalidate the election — the candidate with the most votes still wins.\n\n"
+    "For official details: [eci.gov.in](https://eci.gov.in)"
+)
+
+COALITION_RESPONSE = (
+    "**Coalition Government — What It Means**\n\n"
+    "- A **coalition government** is formed when **two or more political parties** join together \n"
+    "  to collectively hold a majority of seats in the legislature.\n"
+    "- It typically happens when **no single party wins a clear majority** on its own \n"
+    "  (more than half of all seats).\n"
+    "- The parties in a coalition agree on a common agenda and share ministerial positions.\n"
+    "- A legislature where no party has a majority is often called a **hung parliament** or \n"
+    "  **hung assembly**.\n\n"
+    "Coalition governments are common in India's multi-party democratic system.\n\n"
+    "For more on Indian democracy: [eci.gov.in](https://eci.gov.in)"
+)
+
+POLLING_DAY_RESPONSE = (
+    "**What Happens on Polling Day**\n\n"
+    "1. **Go to your assigned polling station** — check your booth number on [voters.eci.gov.in](https://voters.eci.gov.in) before election day.\n"
+    "2. **Carry a valid photo ID** — Voter ID (EPIC card) or any of the 12 approved alternate photo IDs (Aadhaar, passport, PAN card, etc.).\n"
+    "3. **Join the queue** at the correct booth for your name in the voter list.\n"
+    "4. **Show your ID** to polling officials — they verify your name in the voter list.\n"
+    "5. **Get an ink mark** on your left index finger (indelible ink that lasts several days).\n"
+    "6. **Enter the voting compartment** — it is private, no one can see your vote.\n"
+    "7. **Press the button** next to your chosen candidate's name/symbol on the EVM.\n"
+    "8. **Check the VVPAT slip** — it appears behind a glass window for 7 seconds, showing your choice.\n"
+    "9. **Leave the polling station peacefully** after voting.\n\n"
+    "For official guidelines: [eci.gov.in](https://eci.gov.in)"
+)
+
+VOTER_LIST_RESPONSE = (
+    "**How to Check Your Name in the Voter List**\n\n"
+    "1. Visit **[voters.eci.gov.in](https://voters.eci.gov.in)** — the official ECI Voter Services Portal.\n"
+    "2. Click **\"Search in Electoral Roll\"** and enter your name, date of birth, and state/district.\n"
+    "3. You can also search by **EPIC number** (Voter ID card number) for a direct match.\n"
+    "4. Your polling station (booth name and address) will be shown once your name is found.\n"
+    "5. If your name is missing, you can **apply for inclusion** using Form 6 on the same portal.\n\n"
+    "VoteWise cannot directly verify your voter status — please use the official portal only.\n\n"
+    "Official portal: [voters.eci.gov.in](https://voters.eci.gov.in)"
 )
 
 
@@ -304,6 +415,61 @@ def classify_intent(message: str, context: str | None = None) -> dict:
             return {
                 "intent": "voter_registration",
                 "direct_response": VOTER_REGISTRATION_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 10. EVM / VVPAT ---
+    for pat in _EVM_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: evm_vvpat | msg='{cleaned[:40]}'")
+            return {
+                "intent": "evm_vvpat",
+                "direct_response": EVM_VVPAT_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 11. NOTA ---
+    for pat in _NOTA_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: nota | msg='{cleaned[:40]}'")
+            return {
+                "intent": "nota",
+                "direct_response": NOTA_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 12. Coalition government ---
+    for pat in _COALITION_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: coalition_government | msg='{cleaned[:40]}'")
+            return {
+                "intent": "coalition_government",
+                "direct_response": COALITION_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 13. Polling day ---
+    for pat in _POLLING_DAY_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: polling_day | msg='{cleaned[:40]}'")
+            return {
+                "intent": "polling_day",
+                "direct_response": POLLING_DAY_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 14. Voter list / electoral roll check ---
+    for pat in _VOTER_LIST_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: voter_list_check | msg='{cleaned[:40]}'")
+            return {
+                "intent": "voter_list_check",
+                "direct_response": VOTER_LIST_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
