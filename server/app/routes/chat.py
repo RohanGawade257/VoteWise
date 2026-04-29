@@ -6,6 +6,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.models import ChatRequest, ChatResponse, SafetyInfo, MetaInfo, SourceItem
 from app.services import safety_service, gemini_service, rag_service
+from app.services.source_router import classify_intent
 from app.config import settings
 from app.utils.logging import get_logger
 
@@ -13,6 +14,19 @@ logger = get_logger("chat_route")
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
+
+# Intents that are handled by safety_service but should also carry intent metadata
+_SAFETY_REFUSAL_INTENTS = {"political_persuasion", "illegal_voting"}
+
+# Intents whose direct_response bypasses RAG and Gemini entirely
+_DIRECT_ANSWER_INTENTS = {
+    "greeting",
+    "assistant_identity",
+    "current_date_time",
+    "unclear_followup",
+    "current_election_info",
+}
+
 
 def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> ChatResponse:
     """Return a best-effort answer from local RAG when Gemini is unavailable."""
@@ -44,7 +58,14 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
         answer=answer,
         sources=sources,
         safety=SafetyInfo(blocked=False, reason=None),
-        meta=MetaInfo(model="rag-only", used_rag=True, used_search_grounding=False)
+        meta=MetaInfo(
+            model="rag-only",
+            used_rag=True,
+            used_search_grounding=False,
+            intent="civic_static",
+            used_direct_answer=False,
+            used_model=False,
+        )
     )
 
 
@@ -60,7 +81,7 @@ async def chat(request: Request, body: ChatRequest):
         f"| ip={request.client.host} | persona={body.persona} | msgLen={len(body.message)}"
     )
 
-    # --- Safety pre-screen (no Gemini call) ---
+    # ── 1. Safety pre-screen (no Gemini call) ───────────────────────────────
     logger.info(f"[{server_req_id}] Safety check START")
     safety_check = safety_service.check_message(body.message)
     if not safety_check["safe"]:
@@ -70,13 +91,47 @@ async def chat(request: Request, body: ChatRequest):
             answer=safety_check["response"],
             sources=[],
             safety=SafetyInfo(blocked=True, reason=safety_check["reason"]),
-            meta=MetaInfo(model=settings.GEMINI_MODEL, used_rag=False, used_search_grounding=False)
+            meta=MetaInfo(
+                model="safety",
+                used_rag=False,
+                used_search_grounding=False,
+                intent="political_persuasion_or_illegal",
+                used_direct_answer=True,
+                used_model=False,
+            )
         )
     logger.info(f"[{server_req_id}] Safety check PASSED")
 
-    # --- Call Gemini service ---
+    # ── 2. Intent classification ─────────────────────────────────────────────
+    intent_result = classify_intent(body.message, context=body.context)
+    intent = intent_result["intent"]
+    direct_response = intent_result.get("direct_response")
+    use_rag = intent_result.get("use_rag", True)
+    use_model = intent_result.get("use_model", True)
+
+    logger.info(f"[{server_req_id}] Intent: {intent} | direct={direct_response is not None} | use_rag={use_rag} | use_model={use_model}")
+
+    # ── 3. Direct-answer short-circuit (no RAG / no Gemini) ─────────────────
+    if direct_response is not None:
+        elapsed = round((time.monotonic() - t_start) * 1000)
+        logger.info(f"[{server_req_id}] Direct answer returned | intent={intent} | durationMs={elapsed}")
+        return ChatResponse(
+            answer=direct_response,
+            sources=[],
+            safety=SafetyInfo(blocked=False, reason=None),
+            meta=MetaInfo(
+                model="direct",
+                used_rag=False,
+                used_search_grounding=False,
+                intent=intent,
+                used_direct_answer=True,
+                used_model=False,
+            )
+        )
+
+    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context) ──
     try:
-        logger.info(f"[{server_req_id}] Calling gemini_service")
+        logger.info(f"[{server_req_id}] Calling gemini_service | intent={intent}")
         response = await gemini_service.generate_chat_response(
             message=body.message,
             persona=body.persona,
@@ -85,6 +140,11 @@ async def chat(request: Request, body: ChatRequest):
         )
         elapsed = round((time.monotonic() - t_start) * 1000)
         logger.info(f"[{server_req_id}] POST /api/chat SUCCESS | durationMs={elapsed} | blocked={response.safety.blocked}")
+
+        # Patch meta with intent fields (gemini_service sets its own model/used_rag)
+        response.meta.intent = intent
+        response.meta.used_direct_answer = False
+        response.meta.used_model = True
         return response
 
     except (ValueError, PermissionError) as e:
@@ -107,4 +167,5 @@ async def chat(request: Request, body: ChatRequest):
             f"| reason={fallback_reason} | durationMs={elapsed} | err={err_str[:80]}"
         )
         fallback = _build_rag_fallback(body.message, body.persona, fallback_reason)
+        fallback.meta.intent = intent
         return fallback

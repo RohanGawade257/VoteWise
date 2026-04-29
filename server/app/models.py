@@ -20,6 +20,9 @@ class MetaInfo(BaseModel):
     model: str
     used_rag: bool
     used_search_grounding: bool
+    intent: str = "unknown"
+    used_direct_answer: bool = False
+    used_model: bool = False
 
 class ChatResponse(BaseModel):
     answer: str

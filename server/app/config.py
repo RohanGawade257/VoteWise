@@ -11,5 +11,6 @@ class Settings:
     ALLOWED_ORIGIN: str = os.getenv("ALLOWED_ORIGIN", "http://localhost:5173")
     ENABLE_GOOGLE_SEARCH_GROUNDING: bool = os.getenv("ENABLE_GOOGLE_SEARCH_GROUNDING", "false").lower() == "true"
     NODE_ENV: str = os.getenv("NODE_ENV", "development")
+    APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Kolkata")
 
 settings = Settings()
