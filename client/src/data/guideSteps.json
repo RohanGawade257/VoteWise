@@ -1,0 +1,58 @@
+[
+  {
+    "step": 1,
+    "title": "Check eligibility",
+    "explanation": "You must be an Indian citizen, at least 18 years old on the qualifying date, and ordinarily resident in the polling area.",
+    "beginnerNote": "Your 18th birthday is the magic number. If you turn 18 on or before January 1st (or the other qualifying dates), you can apply.",
+    "actionLink": "https://voters.eci.gov.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 2,
+    "title": "Register as voter",
+    "explanation": "Fill out Form 6. You can do this completely online via the Voters' Portal or Voter Helpline App, or physically submit it to your Electoral Registration Officer.",
+    "beginnerNote": "Keep a recent passport-sized photo, address proof (like an electricity bill), and age proof (like a birth certificate or 10th mark sheet) ready.",
+    "actionLink": "https://voters.eci.gov.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 3,
+    "title": "Check your name in voter list",
+    "explanation": "Having a Voter ID (EPIC) is not enough. Your name must strictly be on the current Electoral Roll for your constituency.",
+    "beginnerNote": "Always search your name online a few weeks before the election. If it's missing, you cannot vote.",
+    "actionLink": "https://electoralsearch.eci.gov.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 4,
+    "title": "Find polling booth",
+    "explanation": "Your name is tied to a specific polling station. You can only cast your vote at that designated location.",
+    "beginnerNote": "You can find the exact address of your polling booth using the Voter Helpline App or SMS services.",
+    "actionLink": "https://voters.eci.gov.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 5,
+    "title": "Carry accepted ID",
+    "explanation": "To prove your identity, you must carry your original EPIC (Voter ID). If you don't have it, ECI allows alternative photo IDs like Aadhaar, PAN, Passport, or Driving License.",
+    "beginnerNote": "Photocopies or photos on your phone are not accepted. Take the physical, original card.",
+    "actionLink": "https://eci.gov.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 6,
+    "title": "Vote on polling day",
+    "explanation": "Go to the booth, get your identity verified, have your finger inked, and press the blue button next to your chosen candidate on the EVM. Check the VVPAT slip.",
+    "beginnerNote": "The VVPAT is a glass window that shows a printed slip of your vote for 7 seconds. It proves your vote was recorded correctly.",
+    "actionLink": "https://ecisveep.nic.in/",
+    "source": "Election Commission of India"
+  },
+  {
+    "step": 7,
+    "title": "Understand result day",
+    "explanation": "Votes are counted under strict surveillance. The candidate with the highest number of valid votes in your constituency is declared the winner.",
+    "beginnerNote": "Even if your chosen candidate doesn't win, the winning candidate becomes the representative for your entire area.",
+    "actionLink": "https://results.eci.gov.in/",
+    "source": "Election Commission of India"
+  }
+]

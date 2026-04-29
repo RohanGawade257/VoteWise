@@ -1,0 +1,86 @@
+[
+  {
+    "id": "phase-1",
+    "phase": "Before Election",
+    "items": [
+      {
+        "id": "item-1a",
+        "title": "Delimitation & Electoral Roll Update",
+        "simpleExplanation": "Boundaries are checked and the voter list is updated to add new voters and remove dead/shifted voters.",
+        "beginnerExplanation": "Cleaning up the list of who can vote and where.",
+        "commonConfusion": "People think they only need to register once forever. Actually, if you move to a new city, you must update your address.",
+        "officialReminder": "Check the final electoral roll published by your State Election Commission."
+      }
+    ]
+  },
+  {
+    "id": "phase-2",
+    "phase": "Candidate Phase",
+    "items": [
+      {
+        "id": "item-2a",
+        "title": "Nomination & Scrutiny",
+        "simpleExplanation": "Candidates file papers to run. The Election Commission checks if their papers are legally valid.",
+        "beginnerExplanation": "Checking if the people who want to be leaders follow all the rules to apply.",
+        "commonConfusion": "People think anyone can just stand for election on voting day. You have to apply weeks in advance and pay a deposit.",
+        "officialReminder": "Affidavits showing candidate criminal records and assets are made public."
+      }
+    ]
+  },
+  {
+    "id": "phase-3",
+    "phase": "Campaign Phase",
+    "items": [
+      {
+        "id": "item-3a",
+        "title": "Public Campaigning",
+        "simpleExplanation": "Parties hold rallies, distribute manifestos, and ask for votes.",
+        "beginnerExplanation": "Politicians explain their plans to the public.",
+        "commonConfusion": "People think campaigning can happen until the moment they vote. It actually stops 48 hours before voting begins.",
+        "officialReminder": "The Model Code of Conduct is strictly enforced. Report violations via cVIGIL."
+      }
+    ]
+  },
+  {
+    "id": "phase-4",
+    "phase": "Polling Phase",
+    "items": [
+      {
+        "id": "item-4a",
+        "title": "Voting Day",
+        "simpleExplanation": "Citizens go to designated booths to securely cast their vote using EVMs.",
+        "beginnerExplanation": "The day you actually go press the button for your chosen leader.",
+        "commonConfusion": "Voters sometimes forget their Voter ID and think they can't vote. Other official IDs like Aadhaar or PAN are also accepted.",
+        "officialReminder": "Photography inside the polling booth is a punishable offense."
+      }
+    ]
+  },
+  {
+    "id": "phase-5",
+    "phase": "Counting Phase",
+    "items": [
+      {
+        "id": "item-5a",
+        "title": "EVM Unsealing & Counting",
+        "simpleExplanation": "EVMs are brought from strong rooms and votes are tallied securely.",
+        "beginnerExplanation": "Adding up all the button presses to see who got the most.",
+        "commonConfusion": "People sometimes trust unverified WhatsApp forwards for results. Only the ECI releases official tallies.",
+        "officialReminder": "Real-time trends are published officially at results.eci.gov.in."
+      }
+    ]
+  },
+  {
+    "id": "phase-6",
+    "phase": "After Results",
+    "items": [
+      {
+        "id": "item-6a",
+        "title": "Declaration & Government Formation",
+        "simpleExplanation": "The winner is given a certificate, and the party with the most seats forms the government.",
+        "beginnerExplanation": "The official handover of power to the winners.",
+        "commonConfusion": "If no one party gets a majority, they can form teams (coalitions) to reach the required number.",
+        "officialReminder": "The Election Commission's role ends once results are certified; the President/Governor handles government formation."
+      }
+    ]
+  }
+]

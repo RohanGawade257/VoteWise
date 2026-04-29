@@ -1,0 +1,38 @@
+[
+  {
+    "id": "constitution",
+    "title": "The Constitution of India",
+    "simpleExplanation": "The supreme law of India that lays down the framework defining fundamental political principles, procedures, powers, and duties of government institutions.",
+    "example": "It guarantees the Right to Vote to every adult citizen under Article 326.",
+    "whyItMatters": "It forms the foundation of our democratic rights and ensures the government operates within legal limits.",
+    "source": "National Portal of India",
+    "lastVerified": "2024-01-01"
+  },
+  {
+    "id": "parliament",
+    "title": "The Parliament (Lok Sabha & Rajya Sabha)",
+    "simpleExplanation": "The supreme legislative body of India. It consists of the President and two houses: the Lok Sabha (House of the People) and the Rajya Sabha (Council of States).",
+    "example": "Members of Parliament (MPs) debate and pass laws that apply to the entire country.",
+    "whyItMatters": "It is where national laws are made and the Union Government is held accountable.",
+    "source": "National Portal of India",
+    "lastVerified": "2024-01-01"
+  },
+  {
+    "id": "state-legislature",
+    "title": "State Legislature (Vidhan Sabha)",
+    "simpleExplanation": "The legislative body at the state level. Most states have a single house (Vidhan Sabha or Legislative Assembly).",
+    "example": "Members of Legislative Assembly (MLAs) create laws related to state subjects like police, health, and agriculture.",
+    "whyItMatters": "It manages governance and lawmaking for local issues within the state.",
+    "source": "National Portal of India",
+    "lastVerified": "2024-01-01"
+  },
+  {
+    "id": "eci",
+    "title": "Election Commission of India (ECI)",
+    "simpleExplanation": "An autonomous constitutional authority responsible for administering election processes in India at national and state levels.",
+    "example": "The ECI prepares voter lists, schedules elections, and enforces the Model Code of Conduct.",
+    "whyItMatters": "It ensures elections are conducted in a free, fair, and impartial manner.",
+    "source": "Election Commission of India",
+    "lastVerified": "2024-01-01"
+  }
+]
