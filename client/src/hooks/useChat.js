@@ -77,8 +77,7 @@ export const useChat = () => {
           content: data.answer,
           sources: data.sources || [],
           safetyBlocked: data.safety?.blocked,
-          usedRag: data.meta?.used_rag,
-          model: data.meta?.model,
+          meta: data.meta,
         }
       ]);
     } catch (err) {

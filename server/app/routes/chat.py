@@ -129,7 +129,7 @@ async def chat(request: Request, body: ChatRequest):
             )
         )
 
-    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context / current_election_info / current_party_info) ──
+    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context / current_election_info / current_party_info / current_public_info) ──
     try:
         logger.info(f"[{server_req_id}] Calling gemini_service | intent={intent}")
         response = await gemini_service.generate_chat_response(

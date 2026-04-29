@@ -78,12 +78,19 @@ _CURRENT_ELECTION_RE = [re.compile(p, re.IGNORECASE) for p in _CURRENT_ELECTION_
 
 # 8. Current party info — live / temporal / dynamic queries
 _CURRENT_PARTY_PATTERNS = [
-    r"who\s*(is|are)\s*(currently|now)\s*(ruling|governing|in\s*power|pm|chief\s*minister|cm|president|leader)",
-    r"(current|present)\s*(pm|prime\s*minister|chief\s*minister|cm|president|government|ruling|leader|party\s*president|party\s*leader)",
     r"who\s*(leads|is\s*leading)\s*(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)",
     r"(current|present)\s*(president|head|leader|chief)\s*(of|for)\s*(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)",
+    r"(current|present)\s*party\s*(president|leader|head)",
 ]
 _CURRENT_PARTY_RE = [re.compile(p, re.IGNORECASE) for p in _CURRENT_PARTY_PATTERNS]
+
+# 8b. Current public info — live / public office / government
+_CURRENT_PUBLIC_PATTERNS = [
+    r"who\s*(is|are)\s*(the\s*)?(current|present|new)?\s*(pm|prime\s*minister|chief\s*minister|cm|president|governor|minister|chief\s*election\s*commissioner|election\s*commissioner)",
+    r"(current|present)\s*(pm|prime\s*minister|chief\s*minister|cm|president|governor|minister|chief\s*election\s*commissioner|election\s*commissioner|government|ruling)",
+    r"who\s*(is|are)\s*(currently|now)\s*(ruling|governing|in\s*power|leading\s*the\s*government)",
+]
+_CURRENT_PUBLIC_RE = [re.compile(p, re.IGNORECASE) for p in _CURRENT_PUBLIC_PATTERNS]
 
 # 9. Political party neutral — party info queries (no opinion)
 _PARTY_NAMES = r"(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)"
@@ -201,6 +208,11 @@ CURRENT_ELECTION_FALLBACK = (
 CURRENT_PARTY_FALLBACK = (
     "I don't have access to live party leadership data right now. Please verify the latest party leadership "
     "details from the party's official website or official public sources."
+)
+
+CURRENT_PUBLIC_FALLBACK = (
+    "I can’t verify live public office information right now. Please check an official government source "
+    "such as india.gov.in, pib.gov.in, or the relevant official government department website for the latest details."
 )
 
 VOTER_REGISTRATION_RESPONSE = (
@@ -433,6 +445,26 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 return {
                     "intent": "current_party_info",
                     "direct_response": CURRENT_PARTY_FALLBACK,
+                    "use_rag": False,
+                    "use_model": False,
+                }
+
+    # --- 8b. Current public info (live/dynamic) ---
+    for pat in _CURRENT_PUBLIC_RE:
+        if pat.search(lower):
+            if settings.ENABLE_GOOGLE_SEARCH_GROUNDING:
+                logger.info(f"Intent: current_public_info (search enabled) | msg='{cleaned[:40]}'")
+                return {
+                    "intent": "current_public_info",
+                    "direct_response": None,
+                    "use_rag": False,   
+                    "use_model": True,  
+                }
+            else:
+                logger.info(f"Intent: current_public_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
+                return {
+                    "intent": "current_public_info",
+                    "direct_response": CURRENT_PUBLIC_FALLBACK,
                     "use_rag": False,
                     "use_model": False,
                 }

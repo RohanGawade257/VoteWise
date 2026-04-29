@@ -156,6 +156,24 @@ const ChatPage = () => {
                     </div>
                   </div>
 
+                  {/* Meta freshness info */}
+                  {msg.meta && (msg.meta.checkedAt || msg.meta.sourceType) && (
+                    <div className="mt-2 text-xs text-muted flex flex-col gap-0.5 w-full pl-2 border-l-2 border-border">
+                      {msg.meta.sourceType && (
+                        <span>
+                          {msg.meta.sourceType === 'official_grounding' 
+                            ? 'Verified with official sources' 
+                            : 'Live verification unavailable'}
+                        </span>
+                      )}
+                      {msg.meta.checkedAt && (
+                        <span>
+                          Checked by VoteWise: {new Date(msg.meta.checkedAt).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Sources */}
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-2 space-y-1 w-full">

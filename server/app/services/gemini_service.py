@@ -36,6 +36,12 @@ def _is_official_source(url: str, intent: str) -> bool:
             if "gov.in" in domain or "nic.in" in domain or "sansad.in" in domain:
                 return True
             return False
+            
+        elif intent == "current_public_info":
+            allowed_domains = ["india.gov.in", "pib.gov.in", "pmindia.gov.in", "presidentofindia.gov.in", "eci.gov.in", "sansad.in"]
+            if domain in allowed_domains or domain.endswith(".gov.in") or domain.endswith(".nic.in"):
+                return True
+            return False
     except Exception:
         return False
     return False
@@ -84,21 +90,15 @@ async def generate_chat_response(
         
     if intent == "current_election_info":
         parts.append(
-            "CRITICAL INSTRUCTION: The user is asking about current, live, or dynamic election information. "
-            "You MUST rely exclusively on official or highly reliable sources to answer this. "
-            "Specifically, refer to: eci.gov.in, voters.eci.gov.in, official state CEO websites, "
-            "or State Election Commission websites. "
-            "Do NOT guess or use outdated knowledge. If the search results do not contain a clear, "
-            "official answer, state clearly that you cannot verify the latest information and redirect "
-            "the user to eci.gov.in."
+            "You are VoteWise. The user is asking for live/current election information. Use Google Search grounding and rely only on official election sources. Prefer eci.gov.in, voters.eci.gov.in, electoralsearch.eci.gov.in, official state CEO websites, and official State Election Commission websites. If you cannot verify from an official source, say you cannot verify it and direct the user to official portals. Do not guess. Do not use old model knowledge."
         )
     elif intent == "current_party_info":
         parts.append(
-            "CRITICAL INSTRUCTION: The user is asking about current party leadership or dynamic party information. "
-            "You MUST rely exclusively on the party's official website or highly reliable official public sources to answer this. "
-            "Do NOT guess or use outdated knowledge. Do NOT show bias. If the search results do not contain a clear, "
-            "official answer from a reliable source, state clearly that you cannot verify the latest information and advise "
-            "the user to check official party sources."
+            "You are VoteWise. The user is asking for current party leadership or current party profile information. Use Google Search grounding and rely only on official party websites or official government/parliament sources. Do not use campaign propaganda, news gossip, social media posts, blogs, or Wikipedia as primary source. Do not praise or criticize any party. If official verification is missing, return a safe fallback."
+        )
+    elif intent == "current_public_info":
+        parts.append(
+            "You are VoteWise. The user is asking for current public office or current government information. Use Google Search grounding and rely only on official government sources such as india.gov.in, pib.gov.in, official ministry websites, official state government websites, eci.gov.in for election offices, and nic.in/gov.in domains. If official verification is missing, return a safe fallback. Do not guess."
         )
         
     if rag_context_block:
@@ -136,7 +136,7 @@ async def generate_chat_response(
 
         # Optional: Google Search grounding for current info
         used_search = False
-        if intent in ("current_election_info", "current_party_info") and settings.ENABLE_GOOGLE_SEARCH_GROUNDING:
+        if intent in ("current_election_info", "current_party_info", "current_public_info") and settings.ENABLE_GOOGLE_SEARCH_GROUNDING:
             config.tools = [types.Tool(google_search=types.GoogleSearch())]
             used_search = True
             logger.info(f"Google Search grounding ENABLED for intent: {intent}")
