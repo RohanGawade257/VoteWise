@@ -65,17 +65,25 @@ _FOLLOWUP_EXACT = {
     "aur", "aage", "batao",
 }
 
-# 7. Current election info — live / temporal queries
+# 7. Current election info — live / temporal / dynamic queries
 _CURRENT_ELECTION_PATTERNS = [
-    r"(latest|current|upcoming|next|recent|new|live)\s*(election|result|schedule|phase|date|poll)",
-    r"election\s*(schedule|date|result|phase|timeline|update)",
-    r"who\s*(is|are)\s*(currently|now)\s*(ruling|governing|in\s*power|pm|chief\s*minister|cm)",
-    r"(current|present)\s*(pm|prime\s*minister|chief\s*minister|cm|president|government|ruling)",
-    r"(latest|recent)\s*(result|news|update)",
+    r"(latest|current|upcoming|next|recent|new|live)\s*(election|result|schedule|phase|date|poll|update|notification|eci\s*update)",
+    r"election\s*(schedule|date|result|phase|timeline|update|announced)",
+    r"(latest|recent)\s*(result|news|update|eci\s*notification)",
     r"(when\s*(is|are)\s*(the\s*)?(next|upcoming)\s*(election|poll|vote))",
     r"(lok\s*sabha|vidhan\s*sabha|assembly)\s*(election|result|date|schedule)",
+    r"(today|today'?s?)\s*(election\s*update|news|result)",
 ]
 _CURRENT_ELECTION_RE = [re.compile(p, re.IGNORECASE) for p in _CURRENT_ELECTION_PATTERNS]
+
+# 8. Current party info — live / temporal / dynamic queries
+_CURRENT_PARTY_PATTERNS = [
+    r"who\s*(is|are)\s*(currently|now)\s*(ruling|governing|in\s*power|pm|chief\s*minister|cm|president|leader)",
+    r"(current|present)\s*(pm|prime\s*minister|chief\s*minister|cm|president|government|ruling|leader|party\s*president|party\s*leader)",
+    r"who\s*(leads|is\s*leading)\s*(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)",
+    r"(current|present)\s*(president|head|leader|chief)\s*(of|for)\s*(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)",
+]
+_CURRENT_PARTY_RE = [re.compile(p, re.IGNORECASE) for p in _CURRENT_PARTY_PATTERNS]
 
 # 9. Political party neutral — party info queries (no opinion)
 _PARTY_NAMES = r"(bjp|congress|inc|aap|bsp|cpi|npp|tnc|sp|rjd|jdu|tmc|dmk|ysrcp|brs|shiv\s*sena|ncp|jmm|ljp|rld|ssp)"
@@ -151,15 +159,24 @@ _POLLING_DAY_PATTERNS = [
 ]
 _POLLING_DAY_RE = [re.compile(p, re.IGNORECASE) for p in _POLLING_DAY_PATTERNS]
 
-# 14. Voter list / electoral roll check
+# 14. Voter list / electoral roll check (generic info)
 _VOTER_LIST_PATTERNS = [
     r"\b(how\s*(do|can|to)\s*(i|we|one)\s*)?(check|find|search|verify|look\s*up)\s*(my\s*)?name\s*(in|on)\s*(the\s*)?(voter|electoral)\s*(list|roll)\b",
     r"\b(check|find|search|verify)\s*(my\s*)?(voter\s*list|electoral\s*roll)\b",
     r"\b(find|check|locate)\s*(my\s*)?(polling\s*(booth|station)|booth\s*number)\b",
     r"\belectoral\s*roll\b",
-    r"\bam\s*i\s*(registered|enrolled|in\s*(the\s*)?voter\s*list)\b",
 ]
 _VOTER_LIST_RE = [re.compile(p, re.IGNORECASE) for p in _VOTER_LIST_PATTERNS]
+
+# 15. Personal voter verification
+_PERSONAL_VOTER_PATTERNS = [
+    r"\bam\s*i\s*(registered|enrolled|in\s*(the\s*)?voter\s*list)\b",
+    r"\bcheck\s*my\s*voter\s*status\b",
+    r"\bfind\s*my\s*personal\s*polling\s*booth\b",
+    r"\bverify\s*my\s*name\s*in\s*voter\s*list\b",
+    r"\bwhere\s*(do|can)\s*i\s*vote\b",
+]
+_PERSONAL_VOTER_RE = [re.compile(p, re.IGNORECASE) for p in _PERSONAL_VOTER_PATTERNS]
 
 # ---------------------------------------------------------------------------
 # Direct response builders
@@ -175,15 +192,15 @@ FOLLOWUP_CLARIFICATION = (
     "polling day, EVM/VVPAT, election timeline, or politics basics?"
 )
 
-CURRENT_ELECTION_REDIRECT = (
-    "I don't have access to live election data right now. "
-    "For the latest official election schedule, results, and notifications, "
-    "please visit:\n\n"
-    "• **Election Commission of India**: [eci.gov.in](https://eci.gov.in)\n"
-    "• **Voter Services**: [voters.eci.gov.in](https://voters.eci.gov.in)\n"
-    "• **ECI Results**: [results.eci.gov.in](https://results.eci.gov.in)\n\n"
-    "I can help you understand the election process, voter registration, "
-    "or how EVMs work — just ask!"
+CURRENT_ELECTION_FALLBACK = (
+    "I don't have access to live election updates right now. For the latest official election schedule, "
+    "notifications, and results, please check the Election Commission of India at [eci.gov.in](https://eci.gov.in) "
+    "or the Voters' Service Portal at [voters.eci.gov.in](https://voters.eci.gov.in)."
+)
+
+CURRENT_PARTY_FALLBACK = (
+    "I don't have access to live party leadership data right now. Please verify the latest party leadership "
+    "details from the party's official website or official public sources."
 )
 
 VOTER_REGISTRATION_RESPONSE = (
@@ -266,8 +283,12 @@ VOTER_LIST_RESPONSE = (
     "3. You can also search by **EPIC number** (Voter ID card number) for a direct match.\n"
     "4. Your polling station (booth name and address) will be shown once your name is found.\n"
     "5. If your name is missing, you can **apply for inclusion** using Form 6 on the same portal.\n\n"
-    "VoteWise cannot directly verify your voter status — please use the official portal only.\n\n"
     "Official portal: [voters.eci.gov.in](https://voters.eci.gov.in)"
+)
+
+PERSONAL_VOTER_RESPONSE = (
+    "VoteWise cannot directly verify your personal voter status. "
+    "Please use [voters.eci.gov.in](https://voters.eci.gov.in) or the official Voters' Service Portal."
 )
 
 
@@ -376,23 +397,42 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 "use_model": True,
             }
 
-    # --- 7. Current election info ---
+    # --- 7. Current election info (live/dynamic) ---
     for pat in _CURRENT_ELECTION_RE:
         if pat.search(lower):
             if settings.ENABLE_GOOGLE_SEARCH_GROUNDING:
-                # Let it pass through to Gemini with search grounding
                 logger.info(f"Intent: current_election_info (search enabled) | msg='{cleaned[:40]}'")
                 return {
                     "intent": "current_election_info",
                     "direct_response": None,
-                    "use_rag": True,
-                    "use_model": True,
+                    "use_rag": False,   
+                    "use_model": True,  
                 }
             else:
-                logger.info(f"Intent: current_election_info (search disabled → redirect) | msg='{cleaned[:40]}'")
+                logger.info(f"Intent: current_election_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
                 return {
                     "intent": "current_election_info",
-                    "direct_response": CURRENT_ELECTION_REDIRECT,
+                    "direct_response": CURRENT_ELECTION_FALLBACK,
+                    "use_rag": False,
+                    "use_model": False,
+                }
+
+    # --- 8. Current party info (live/dynamic) ---
+    for pat in _CURRENT_PARTY_RE:
+        if pat.search(lower):
+            if settings.ENABLE_GOOGLE_SEARCH_GROUNDING:
+                logger.info(f"Intent: current_party_info (search enabled) | msg='{cleaned[:40]}'")
+                return {
+                    "intent": "current_party_info",
+                    "direct_response": None,
+                    "use_rag": False,   
+                    "use_model": True,  
+                }
+            else:
+                logger.info(f"Intent: current_party_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
+                return {
+                    "intent": "current_party_info",
+                    "direct_response": CURRENT_PARTY_FALLBACK,
                     "use_rag": False,
                     "use_model": False,
                 }
@@ -470,6 +510,17 @@ def classify_intent(message: str, context: str | None = None) -> dict:
             return {
                 "intent": "voter_list_check",
                 "direct_response": VOTER_LIST_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 15. Personal voter verification ---
+    for pat in _PERSONAL_VOTER_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: personal_voter_status | msg='{cleaned[:40]}'")
+            return {
+                "intent": "personal_voter_status",
+                "direct_response": PERSONAL_VOTER_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }

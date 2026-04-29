@@ -129,14 +129,15 @@ async def chat(request: Request, body: ChatRequest):
             )
         )
 
-    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context) ──
+    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context / current_election_info / current_party_info) ──
     try:
         logger.info(f"[{server_req_id}] Calling gemini_service | intent={intent}")
         response = await gemini_service.generate_chat_response(
             message=body.message,
             persona=body.persona,
             context=body.context,
-            use_current_info=body.use_current_info,
+            intent=intent,
+            use_rag=use_rag,
         )
         elapsed = round((time.monotonic() - t_start) * 1000)
         logger.info(f"[{server_req_id}] POST /api/chat SUCCESS | durationMs={elapsed} | blocked={response.safety.blocked}")
@@ -145,6 +146,11 @@ async def chat(request: Request, body: ChatRequest):
         response.meta.intent = intent
         response.meta.used_direct_answer = False
         response.meta.used_model = True
+        
+        # Override model name if grounding was used
+        if response.meta.used_search_grounding:
+            response.meta.model = "gemini-grounded"
+            
         return response
 
     except (ValueError, PermissionError) as e:
