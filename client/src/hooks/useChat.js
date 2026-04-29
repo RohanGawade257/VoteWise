@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 
-const API_BASE = '/api';
+// In dev: use VITE_API_BASE_URL if set, otherwise Vite proxy handles /api → localhost:VITE_BACKEND_PORT
+// In prod: same-origin /api (no env var needed)
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const getErrorMessage = (status, fallbackMsg) => {
   switch (status) {
@@ -88,5 +90,7 @@ export const useChat = () => {
     }
   };
 
-  return { messages, isLoading, error, sendMessage, setMessages };
+  const clearError = () => setError(null);
+
+  return { messages, isLoading, error, sendMessage, setMessages, clearError };
 };
