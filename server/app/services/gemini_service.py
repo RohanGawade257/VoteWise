@@ -2,6 +2,8 @@
 Gemini Service — Handles all Google Gemini API calls.
 Uses google-genai SDK. Never logs or exposes the API key.
 """
+import asyncio
+from functools import partial
 from google import genai
 from google.genai import types
 from urllib.parse import urlparse
@@ -123,7 +125,7 @@ async def generate_chat_response(
         sources.append(SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official"))
 
     # --- 5. Call Gemini ---
-    logger.info(f"Calling Gemini | model={settings.GEMINI_MODEL} | persona={persona} | rag_chunks={len(rag_chunks)} | use_current_info={use_current_info}")
+    logger.info(f"Calling Gemini | model={settings.GEMINI_MODEL} | persona={persona} | rag_chunks={len(rag_chunks)} | intent={intent}")
 
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -141,10 +143,17 @@ async def generate_chat_response(
             used_search = True
             logger.info(f"Google Search grounding ENABLED for intent: {intent}")
 
-        response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=full_user_prompt,
-            config=config,
+        # The Gemini SDK is synchronous/blocking — run in a thread executor
+        # so we don't block FastAPI's async event loop.
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            partial(
+                client.models.generate_content,
+                model=settings.GEMINI_MODEL,
+                contents=full_user_prompt,
+                config=config,
+            )
         )
 
         answer_text = response.text
@@ -187,14 +196,19 @@ async def generate_chat_response(
 
         logger.info(f"Gemini response OK | length={len(answer_text)} chars | search_grounded={used_search} | official_src={found_official_grounding}")
 
+        final_model_name = "gemini-grounded" if used_search and found_official_grounding else settings.GEMINI_MODEL
+
         return ChatResponse(
             answer=answer_text,
             sources=sources,
             safety=SafetyInfo(blocked=False, reason=None),
             meta=MetaInfo(
-                model=settings.GEMINI_MODEL, 
+                model=final_model_name, 
                 used_rag=used_rag, 
                 used_search_grounding=used_search,
+                intent=intent,
+                used_direct_answer=False,
+                used_model=True,
                 checkedAt=checked_at,
                 sourceType=source_type
             )
@@ -203,11 +217,27 @@ async def generate_chat_response(
     except Exception as e:
         error_str = str(e)
         status_code = getattr(e, 'status_code', None) or getattr(e, 'code', None)
-        logger.error(f"Gemini error | status={status_code} | type={type(e).__name__} | msg={error_str[:150]}")
+
+        # ── Structured diagnostic log (backend-only, never exposed to frontend) ──
+        is_quota = (
+            status_code == 429
+            or "quota" in error_str.lower()
+            or "rate" in error_str.lower()
+            or "resource_exhausted" in error_str.lower()
+        )
+        logger.error(
+            f"Gemini call FAILED"
+            f" | exc_class={type(e).__name__}"
+            f" | status_code={status_code}"
+            f" | is_quota_or_rate_limit={is_quota}"
+            f" | grounding_requested={used_search}"
+            f" | intent={intent}"
+            f" | msg={error_str[:200]}"
+        )
 
         if "API_KEY" in error_str.upper() or status_code in (401, 403):
             raise PermissionError(ERROR_MESSAGES["auth"])
-        if status_code == 429 or "quota" in error_str.lower() or "rate" in error_str.lower():
+        if is_quota:
             raise ConnectionError(ERROR_MESSAGES["quota"])
         if status_code == 503 or "overload" in error_str.lower() or "unavailable" in error_str.lower():
             raise ConnectionError(ERROR_MESSAGES["overload"])

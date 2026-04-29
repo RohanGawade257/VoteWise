@@ -1,12 +1,18 @@
 import time
 import uuid
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.models import ChatRequest, ChatResponse, SafetyInfo, MetaInfo, SourceItem
 from app.services import safety_service, gemini_service, rag_service
-from app.services.source_router import classify_intent
+from app.services.source_router import (
+    classify_intent,
+    CURRENT_ELECTION_FALLBACK,
+    CURRENT_PARTY_FALLBACK,
+    CURRENT_PUBLIC_FALLBACK,
+)
 from app.config import settings
 from app.utils.logging import get_logger
 
@@ -18,13 +24,19 @@ router = APIRouter()
 # Intents that are handled by safety_service but should also carry intent metadata
 _SAFETY_REFUSAL_INTENTS = {"political_persuasion", "illegal_voting"}
 
-# Intents whose direct_response bypasses RAG and Gemini entirely
-_DIRECT_ANSWER_INTENTS = {
-    "greeting",
-    "assistant_identity",
-    "current_date_time",
-    "unclear_followup",
+# Live intents that must route to Gemini grounding when grounding is enabled.
+# These MUST NOT short-circuit to direct fallback if ENABLE_GOOGLE_SEARCH_GROUNDING=true.
+_LIVE_INTENTS = {
+    "current_public_info",
     "current_election_info",
+    "current_party_info",
+}
+
+# Fallback text per live intent (used when Gemini fails and no direct_response is available)
+_LIVE_INTENT_FALLBACK = {
+    "current_election_info": CURRENT_ELECTION_FALLBACK,
+    "current_party_info":   CURRENT_PARTY_FALLBACK,
+    "current_public_info":  CURRENT_PUBLIC_FALLBACK,
 }
 
 
@@ -109,12 +121,40 @@ async def chat(request: Request, body: ChatRequest):
     use_rag = intent_result.get("use_rag", True)
     use_model = intent_result.get("use_model", True)
 
-    logger.info(f"[{server_req_id}] Intent: {intent} | direct={direct_response is not None} | use_rag={use_rag} | use_model={use_model}")
+    is_live_intent = intent in _LIVE_INTENTS
+    grounding_enabled = settings.ENABLE_GOOGLE_SEARCH_GROUNDING
+
+    # ── DEBUG (server-side only, never exposed to frontend) ──────────────────
+    logger.debug(f"[DBG][{server_req_id}] intent={intent}")
+    logger.debug(f"[DBG][{server_req_id}] direct_response present={direct_response is not None}")
+    logger.debug(f"[DBG][{server_req_id}] grounding enabled={grounding_enabled}")
+    logger.info(f"[{server_req_id}] Intent: {intent} | direct={direct_response is not None} | use_rag={use_rag} | use_model={use_model} | is_live={is_live_intent} | grounding={grounding_enabled}")
 
     # ── 3. Direct-answer short-circuit (no RAG / no Gemini) ─────────────────
-    if direct_response is not None:
+    # Live intents with grounding enabled MUST NOT short-circuit here.
+    # They must continue to the Gemini grounding branch below.
+    # When grounding is enabled, source_router already returns direct_response=None
+    # for live intents, so this guard is defence-in-depth.
+    skip_direct = is_live_intent and grounding_enabled
+
+    if direct_response is not None and not skip_direct:
         elapsed = round((time.monotonic() - t_start) * 1000)
-        logger.info(f"[{server_req_id}] Direct answer returned | intent={intent} | durationMs={elapsed}")
+
+        checked_at = None
+        source_type = None
+        if is_live_intent:
+            # grounding_enabled is False here (otherwise skip_direct would be True)
+            checked_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            source_type = "unverified_fallback"
+
+        logger.info(
+            f"[{server_req_id}] Direct answer returned | intent={intent} "
+            f"| is_live={is_live_intent} | grounding_enabled={grounding_enabled} "
+            f"| skip_direct={skip_direct} | durationMs={elapsed}"
+        )
+        logger.debug(f"[DBG][{server_req_id}] skipped fallback because grounding enabled=False")
+        logger.debug(f"[DBG][{server_req_id}] gemini_service called=False")
+
         return ChatResponse(
             answer=direct_response,
             sources=[],
@@ -126,12 +166,20 @@ async def chat(request: Request, body: ChatRequest):
                 intent=intent,
                 used_direct_answer=True,
                 used_model=False,
+                checkedAt=checked_at,
+                sourceType=source_type
             )
         )
+    elif direct_response is not None and skip_direct:
+        logger.info(f"[{server_req_id}] Skipping direct fallback because grounding is ENABLED | intent={intent}")
+        logger.debug(f"[DBG][{server_req_id}] skipped fallback because grounding enabled=True")
 
-    # ── 4. RAG + Gemini flow (civic_static / political_party_neutral / unclear_followup with context / current_election_info / current_party_info / current_public_info) ──
+    # ── 4. RAG + Gemini flow ─────────────────────────────────────────────────
+    # Handles: civic_static, political_party_neutral, unclear_followup (with context),
+    # current_election_info, current_party_info, current_public_info (when grounding enabled)
+    logger.debug(f"[DBG][{server_req_id}] gemini_service called=True")
     try:
-        logger.info(f"[{server_req_id}] Calling gemini_service | intent={intent}")
+        logger.info(f"[{server_req_id}] Calling gemini_service | intent={intent} | use_rag={use_rag} | grounding_enabled={grounding_enabled}")
         response = await gemini_service.generate_chat_response(
             message=body.message,
             persona=body.persona,
@@ -140,17 +188,31 @@ async def chat(request: Request, body: ChatRequest):
             use_rag=use_rag,
         )
         elapsed = round((time.monotonic() - t_start) * 1000)
-        logger.info(f"[{server_req_id}] POST /api/chat SUCCESS | durationMs={elapsed} | blocked={response.safety.blocked}")
+
+        # ── DEBUG: log grounding metadata outcome ────────────────────────────
+        grounding_meta_present = (
+            response.meta.used_search_grounding and
+            response.meta.sourceType is not None
+        )
+        source_urls = [s.url for s in response.sources] if response.sources else []
+        logger.debug(f"[DBG][{server_req_id}] grounding metadata present={grounding_meta_present}")
+        logger.debug(f"[DBG][{server_req_id}] extracted source urls={source_urls}")
+        logger.debug(f"[DBG][{server_req_id}] final sourceType={response.meta.sourceType}")
+        logger.info(
+            f"[{server_req_id}] POST /api/chat SUCCESS | durationMs={elapsed} "
+            f"| blocked={response.safety.blocked} | used_search={response.meta.used_search_grounding} "
+            f"| sourceType={response.meta.sourceType}"
+        )
 
         # Patch meta with intent fields (gemini_service sets its own model/used_rag)
         response.meta.intent = intent
         response.meta.used_direct_answer = False
         response.meta.used_model = True
-        
+
         # Override model name if grounding was used
         if response.meta.used_search_grounding:
             response.meta.model = "gemini-grounded"
-            
+
         return response
 
     except (ValueError, PermissionError) as e:
@@ -160,7 +222,7 @@ async def chat(request: Request, body: ChatRequest):
         return JSONResponse(status_code=503, content={"error": str(e)})
 
     except (ConnectionError, TimeoutError, RuntimeError) as e:
-        # Gemini quota / overload / timeout — use RAG fallback instead of error
+        # Gemini quota / overload / timeout
         elapsed = round((time.monotonic() - t_start) * 1000)
         err_str = str(e)
         fallback_reason = (
@@ -168,6 +230,45 @@ async def chat(request: Request, body: ChatRequest):
             else "gemini_timeout" if "timeout" in err_str.lower()
             else "gemini_unavailable"
         )
+
+        # For live intents: RAG is unsafe/inaccurate for live data.
+        # Use the known safe fallback text for this intent.
+        # NOTE: when grounding is enabled, direct_response is None (source_router returns None
+        # so routing continues to Gemini). We must look up the fallback text directly.
+        if is_live_intent:
+            # Resolve the safe fallback text: prefer direct_response if set,
+            # otherwise use the pre-defined per-intent fallback string.
+            safe_fallback_text = direct_response or _LIVE_INTENT_FALLBACK.get(
+                intent,
+                "I could not verify this from an official source right now. "
+                "Please check [eci.gov.in](https://eci.gov.in) for official information."
+            )
+            checked_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            logger.warning(
+                f"[{server_req_id}] Gemini unavailable — LIVE INTENT safe fallback "
+                f"| intent={intent} | reason={fallback_reason} | durationMs={elapsed}"
+            )
+            logger.debug(f"[DBG][{server_req_id}] final sourceType=unverified_fallback (gemini failed)")
+            return ChatResponse(
+                answer=safe_fallback_text,
+                # sources=[] for unverified_fallback: no source has been validated.
+                # ECI is NOT the correct source for general public office queries (current PM, CM, etc).
+                # The answer text already embeds appropriate official links per intent.
+                sources=[],
+                safety=SafetyInfo(blocked=False, reason=None),
+                meta=MetaInfo(
+                    model="gemini-failed-fallback",
+                    used_rag=False,
+                    used_search_grounding=grounding_enabled,  # grounding was attempted
+                    intent=intent,
+                    used_direct_answer=False,
+                    used_model=True,  # Gemini was called (but failed)
+                    checkedAt=checked_at,
+                    sourceType="unverified_fallback"
+                )
+            )
+
+        # Standard RAG fallback for civic/static questions
         logger.warning(
             f"[{server_req_id}] Gemini unavailable — using RAG fallback "
             f"| reason={fallback_reason} | durationMs={elapsed} | err={err_str[:80]}"
