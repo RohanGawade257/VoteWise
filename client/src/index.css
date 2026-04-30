@@ -481,6 +481,13 @@ img {
   image-rendering: -webkit-optimize-contrast;
 }
 
+/* Keep the existing navbar visible while the party detail modal locks page scroll. */
+body.party-modal-open nav {
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  z-index: 60 !important;
+}
+
 
 /* =============================================================================
    Claymorphism / Glassmorphism Hybrid Cards

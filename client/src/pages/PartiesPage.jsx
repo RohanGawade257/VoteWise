@@ -159,6 +159,7 @@ const PartiesPage = () => {
     const previousHtmlOverflow = documentElement.style.overflow;
     const previousHtmlOverscroll = documentElement.style.overscrollBehavior;
 
+    body.classList.add('party-modal-open');
     documentElement.style.overflow = 'hidden';
     documentElement.style.overscrollBehavior = 'none';
     body.style.overflow = 'hidden';
@@ -168,6 +169,7 @@ const PartiesPage = () => {
     }
 
     return () => {
+      body.classList.remove('party-modal-open');
       documentElement.style.overflow = previousHtmlOverflow;
       documentElement.style.overscrollBehavior = previousHtmlOverscroll;
       body.style.overflow = previousBodyOverflow;
