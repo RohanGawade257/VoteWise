@@ -1,3 +1,4 @@
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -41,29 +42,253 @@ _LIVE_INTENT_FALLBACK = {
 }
 
 
+
+# ---------------------------------------------------------------------------
+# Intent detection helpers for fallback answer quality
+# ---------------------------------------------------------------------------
+
+# Keywords that strongly signal voter-registration / first-time-voter intent
+_REG_SIGNALS = frozenset({
+    "18", "first time", "first-time", "firsttime", "new voter",
+    "register", "registration", "form 6", "form6", "voter id",
+    "voter list", "electoral roll", "enroll", "enrolment",
+    "how to vote", "how do i vote", "want to vote",
+})
+
+# Headings/content tokens that are IRRELEVANT for registration queries
+# — any chunk whose heading contains one of these is penalised
+_REG_IRRELEVANT_HEADINGS = frozenset({
+    "counting", "vote counting", "count", "result", "results",
+    "government formation", "confidence vote", "post-polling",
+    "campaign phase", "nomination", "party directory",
+})
+
+# EVM / VVPAT signals
+_EVM_SIGNALS = frozenset({"evm", "vvpat", "electronic voting", "voting machine", "vvpat slip"})
+
+# NOTA signals
+_NOTA_SIGNALS = frozenset({"nota", "none of the above"})
+
+# Coalition / majority signals
+_COALITION_SIGNALS = frozenset({
+    "coalition", "majority", "government formation",
+    "hung parliament", "alliance", "ruling party",
+})
+
+# Live / schedule signals — stale RAG is dangerous here
+_LIVE_SIGNALS = frozenset({
+    "latest", "current", "upcoming", "schedule", "next election",
+    "election date", "polling date", "when is", "when are",
+})
+
+
+def _detect_fallback_intent(message: str) -> str:
+    """Classify the query into a fallback-answer intent bucket."""
+    m = message.lower()
+    if any(s in m for s in _REG_SIGNALS):
+        return "first_time_voter"
+    if any(s in m for s in _EVM_SIGNALS):
+        return "evm_vvpat"
+    if any(s in m for s in _NOTA_SIGNALS):
+        return "nota"
+    if any(s in m for s in _COALITION_SIGNALS):
+        return "coalition"
+    if any(s in m for s in _LIVE_SIGNALS):
+        return "live_schedule"
+    return "general"
+
+
+def _is_relevant_chunk(chunk: dict, fallback_intent: str) -> bool:
+    """
+    Return False if a chunk is clearly irrelevant for the given intent.
+    This prevents 'Vote Counting' from appearing in registration answers, etc.
+    """
+    heading_lower = chunk.get("heading", "").lower()
+    file_lower = chunk.get("filename", "").lower()
+
+    if fallback_intent == "first_time_voter":
+        # Penalise counting / results / government formation chunks
+        if any(kw in heading_lower for kw in _REG_IRRELEVANT_HEADINGS):
+            return False
+        # Penalise timeline.md chunks that are about post-polling phases
+        if "timeline" in file_lower and any(
+            kw in heading_lower for kw in {"counting", "post-polling", "government formation", "phase 5", "phase 6"}
+        ):
+            return False
+    return True
+
+
+def _strip_markdown_artifacts(text: str) -> str:
+    """Remove raw markdown artifacts that look ugly in chat bubbles."""
+    # Remove leading/trailing underscores used as italic markers
+    text = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"\1", text)
+    # Remove raw horizontal rules
+    text = re.sub(r"^\s*[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
+    # Remove debug/internal labels
+    for label in ("chunk", "score", "gemini_unavailable", "fallback"):
+        text = re.sub(rf"\b{label}\b\s*[:=]?\s*", "", text, flags=re.IGNORECASE)
+    return text.strip()
+
+
+# ---------------------------------------------------------------------------
+# Intent-specific fallback templates
+# ---------------------------------------------------------------------------
+
+_TEMPLATE_FIRST_TIME_VOTER = """**First-Time Voter Guide**
+
+Here is what you need to do to vote for the first time in India:
+
+- **Check eligibility** — Must be 18+, an Indian citizen, and a resident of your constituency
+- **Register online** — Visit [voters.eci.gov.in](https://voters.eci.gov.in) and fill **Form 6**. Upload a photo, age proof, and address proof
+- **Verify your name** — Check your name in the Electoral Roll at [electoralsearch.eci.gov.in](https://electoralsearch.eci.gov.in)
+- **Find your booth** — Your polling station is assigned after registration. Check it on [voters.eci.gov.in](https://voters.eci.gov.in) or call **1950**
+- **Carry valid ID on polling day** — EPIC (Voter ID), Aadhaar, PAN, Passport, or Driving Licence are accepted
+- **Vote using the EVM** — Press the button next to your candidate. A VVPAT slip will confirm your vote
+
+> For official actions, always verify on [voters.eci.gov.in](https://voters.eci.gov.in) or [eci.gov.in](https://eci.gov.in)."""
+
+_TEMPLATE_EVM_VVPAT = """**EVM and VVPAT — Explained Simply**
+
+- **EVM (Electronic Voting Machine)** — A tamper-proof device used in Indian elections instead of paper ballots. You press a blue button next to your chosen candidate's name and symbol
+- **VVPAT (Voter Verifiable Paper Audit Trail)** — A machine attached to the EVM that prints a paper slip showing your voted candidate's name and symbol. The slip is visible through a glass window for **7 seconds** before it drops into a sealed box
+- Both machines are manufactured by government PSUs (BEL and ECIL) and are rigorously tested before each election
+
+> Source: [eci.gov.in](https://eci.gov.in)"""
+
+_TEMPLATE_NOTA = """**NOTA — None of the Above**
+
+- **NOTA** stands for **None of the Above**
+- It was introduced in Indian elections from **2013** onwards following a Supreme Court order
+- You can press NOTA on the EVM if you do not wish to vote for any of the listed candidates
+- NOTA votes **are counted** and reported, but they do not cause a re-election. The candidate with the most votes still wins
+- NOTA is a way to formally register dissatisfaction with all candidates
+
+> Source: [eci.gov.in](https://eci.gov.in)"""
+
+_TEMPLATE_COALITION = """**Coalition Government — Explained**
+
+- A **coalition government** is formed when no single political party wins an outright majority (more than 50% of seats) in Parliament
+- Multiple parties with compatible goals join together and agree to share power
+- The **largest party** in the coalition typically provides the Prime Minister
+- A coalition must prove its majority through a **confidence vote** in the Lok Sabha
+- India has had several coalition governments, particularly since the 1990s
+
+> Source: [eci.gov.in](https://eci.gov.in)"""
+
+_TEMPLATE_LIVE_SCHEDULE = """**Election Dates & Schedule**
+
+Election dates and schedules change with every election cycle and cannot be reliably answered from a static knowledge base.
+
+**Please verify the latest information directly from:**
+- [eci.gov.in](https://eci.gov.in) — Official Election Commission of India
+- [results.eci.gov.in](https://results.eci.gov.in) — Live results
+- Official ECI press releases and notifications"""
+
+
 def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> ChatResponse:
-    """Return a best-effort answer from local RAG when Gemini is unavailable."""
-    chunks = rag_service.retrieve(message, top_k=3)
-    if chunks:
-        context_text = "\n\n".join(
-            f"**{c['heading']}**\n{c['content']}" for c in chunks
+    """
+    Return a clean, intent-aware answer from the local RAG knowledge base
+    when Gemini is unavailable.
+
+    Key improvements over the raw chunk-dump approach:
+    - Detects the user's intent from the query
+    - For known intents (first-time voter, EVM, NOTA, coalition, live schedule),
+      uses a curated template instead of raw chunk text
+    - For general civic queries, filters out irrelevant chunks,
+      caps at 2 top chunks, and renders a clean bullet-point answer
+    - Moves fallback notice entirely into meta.fallback_reason
+      so the main answer body is clean and helpful
+    """
+    fallback_intent = _detect_fallback_intent(message)
+    logger.info(f"RAG fallback | fallback_intent={fallback_intent} | reason={fallback_reason}")
+
+    # ── Known-intent: use curated template ──────────────────────────────────
+    template_map = {
+        "first_time_voter": _TEMPLATE_FIRST_TIME_VOTER,
+        "evm_vvpat":        _TEMPLATE_EVM_VVPAT,
+        "nota":             _TEMPLATE_NOTA,
+        "coalition":        _TEMPLATE_COALITION,
+        "live_schedule":    _TEMPLATE_LIVE_SCHEDULE,
+    }
+    if fallback_intent in template_map:
+        answer = template_map[fallback_intent]
+        # Build source list appropriate for the intent
+        if fallback_intent == "first_time_voter":
+            sources = [
+                SourceItem(title="Voter Registration Portal", url="https://voters.eci.gov.in", type="official"),
+                SourceItem(title="Electoral Search", url="https://electoralsearch.eci.gov.in", type="official"),
+                SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official"),
+            ]
+        else:
+            sources = [SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official")]
+
+        return ChatResponse(
+            answer=answer,
+            sources=sources,
+            safety=SafetyInfo(blocked=False, reason=None),
+            meta=MetaInfo(
+                model="rag-only",
+                used_rag=True,
+                used_search_grounding=False,
+                intent=fallback_intent,
+                used_direct_answer=False,
+                used_model=False,
+                used_rag_fallback=True,
+                fallback_reason=fallback_reason,
+                persona_used=persona,
+            )
         )
+
+    # ── General civic query: retrieve, filter, and synthesise ───────────────
+    raw_chunks = rag_service.retrieve(message, top_k=3)
+
+    # Filter out irrelevant chunks based on intent
+    relevant_chunks = [c for c in raw_chunks if _is_relevant_chunk(c, fallback_intent)]
+
+    # Cap at top 2 highly relevant chunks to avoid information overload
+    top_chunks = relevant_chunks[:2]
+
+    if top_chunks:
+        lines = []
+        for c in top_chunks:
+            # Clean the chunk content — strip raw markdown artifacts
+            content = _strip_markdown_artifacts(c["content"])
+            heading = c.get("heading", "")
+            if heading:
+                lines.append(f"**{heading}**")
+            # Convert inline sentences to bullets if they aren't already
+            for sentence in content.split(". "):
+                sentence = sentence.strip()
+                if sentence and not sentence.startswith("-"):
+                    lines.append(f"- {sentence}")
+                elif sentence:
+                    lines.append(sentence)
+
+        body = "\n".join(lines)
         answer = (
-            f"_The AI model is temporarily unavailable ({fallback_reason}), "
-            f"so I'm answering from the built-in VoteWise knowledge base._\n\n"
-            f"{context_text}\n\n"
-            "Always verify from **eci.gov.in** or **voters.eci.gov.in**."
+            f"{body}\n\n"
+            "> Always verify official information at "
+            "[eci.gov.in](https://eci.gov.in) or [voters.eci.gov.in](https://voters.eci.gov.in)."
         )
+
         sources = []
-        seen = set()
-        for c in chunks:
+        seen: set = set()
+        for c in top_chunks:
             if c["source_url"] not in seen:
-                sources.append(SourceItem(title=c["source_title"], url=c["source_url"], type=c["source_type"]))
+                sources.append(SourceItem(
+                    title=c["source_title"],
+                    url=c["source_url"],
+                    type=c["source_type"]
+                ))
                 seen.add(c["source_url"])
     else:
+        # No usable chunks — give a safe, helpful redirect
         answer = (
-            f"_The AI model is temporarily unavailable ({fallback_reason}). "
-            "Please visit **eci.gov.in** or **voters.eci.gov.in** for official information._"
+            "I wasn't able to find a confident answer in the VoteWise knowledge base for that question.\n\n"
+            "Please visit the official sources below for accurate information:\n"
+            "- [voters.eci.gov.in](https://voters.eci.gov.in) — Voter registration and status\n"
+            "- [eci.gov.in](https://eci.gov.in) — Election Commission of India\n"
+            "- **Voter Helpline:** 1950"
         )
         sources = [SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official")]
 
@@ -75,12 +300,15 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
             model="rag-only",
             used_rag=True,
             used_search_grounding=False,
-            intent="civic_static",
+            intent=fallback_intent,
             used_direct_answer=False,
             used_model=False,
-            persona_used="general",  # patched by caller
+            used_rag_fallback=True,
+            fallback_reason=fallback_reason,
+            persona_used=persona,
         )
     )
+
 
 
 @router.post("/api/chat", response_model=ChatResponse)

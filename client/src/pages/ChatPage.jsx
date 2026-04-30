@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X, BookOpen } from 'lucide-react';
 import { useChat } from '../hooks/useChat';
 import MessageMeta from '../components/MessageMeta';
 
@@ -13,58 +14,44 @@ const SUGGESTED_PROMPTS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Lightweight inline markdown renderer — handles **bold** and [text](url).
-// Preserves newlines via whitespace-pre-wrap on the parent container.
-// No external library required.
+// react-markdown component map — styles markdown elements inside chat bubbles
 // ---------------------------------------------------------------------------
-function renderMarkdown(text) {
-  if (!text) return null;
+const MD_COMPONENTS = {
+  // Paragraphs
+  p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+  // Bullet lists
+  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-2 pl-1">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-2 pl-1">{children}</ol>,
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  // Bold
+  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+  // Inline code
+  code: ({ children }) => (
+    <code className="bg-slate-100 text-secondary text-sm px-1.5 py-0.5 rounded font-mono">{children}</code>
+  ),
+  // Blockquote (used for source reminders)
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-secondary/30 pl-3 my-2 text-slate-600 italic text-sm">
+      {children}
+    </blockquote>
+  ),
+  // Links — always open in new tab, never dangerouslySetInnerHTML
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-secondary underline underline-offset-2 hover:opacity-80 break-words"
+    >
+      {children}
+    </a>
+  ),
+  // Headings inside chat (use modest sizes)
+  h1: ({ children }) => <h2 className="text-lg font-extrabold text-primary mb-2 mt-1">{children}</h2>,
+  h2: ({ children }) => <h3 className="text-base font-bold text-primary mb-1.5 mt-1">{children}</h3>,
+  h3: ({ children }) => <h4 className="text-sm font-bold text-slate-700 mb-1 mt-1">{children}</h4>,
+};
 
-  // Regex matches **bold** or [label](url) — in one pass
-  const INLINE_RE = /(\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)]+)\))/g;
-
-  return text.split('\n').map((line, li, arr) => {
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-    let key = 0;
-
-    INLINE_RE.lastIndex = 0; // reset for each line
-    while ((match = INLINE_RE.exec(line)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(line.slice(lastIndex, match.index));
-      }
-      if (match[0].startsWith('**')) {
-        // Bold
-        parts.push(<strong key={key++}>{match[2]}</strong>);
-      } else {
-        // Link
-        parts.push(
-          <a
-            key={key++}
-            href={match[4]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-secondary underline underline-offset-2 hover:opacity-80"
-          >
-            {match[3]}
-          </a>
-        );
-      }
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < line.length) {
-      parts.push(line.slice(lastIndex));
-    }
-
-    return (
-      <span key={li}>
-        {parts}
-        {li < arr.length - 1 && '\n'}
-      </span>
-    );
-  });
-}
 
 // ---------------------------------------------------------------------------
 // ChatPage
@@ -162,10 +149,21 @@ const ChatPage = () => {
                       </div>
                     )}
                     {/* Rendered content */}
-                    <div className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
-                      {msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content}
+                    <div className="break-words text-[15px] prose-chat">
+                      {msg.role === 'assistant'
+                        ? <ReactMarkdown components={MD_COMPONENTS}>{msg.content}</ReactMarkdown>
+                        : <span className="leading-relaxed whitespace-pre-wrap">{msg.content}</span>
+                      }
                     </div>
                   </div>
+
+                  {/* RAG fallback badge — shown ONLY when Gemini was unavailable */}
+                  {msg.role === 'assistant' && msg.meta?.used_rag_fallback && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 font-medium">
+                      <BookOpen size={12} className="text-secondary" />
+                      <span>Answered from VoteWise knowledge base</span>
+                    </div>
+                  )}
 
                   {/* Answer provenance badges, confidence, sources */}
                   {msg.role === 'assistant' && (

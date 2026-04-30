@@ -29,6 +29,8 @@ class MetaInfo(BaseModel):
     source_files_used: List[str] = []
     checkedAt: Optional[str] = None
     sourceType: Optional[str] = None
+    used_rag_fallback: bool = False          # True when Gemini was unavailable and RAG template was used
+    fallback_reason: Optional[str] = None    # "gemini_unavailable" | "gemini_quota" | "gemini_timeout"
 
 class ChatResponse(BaseModel):
     answer: str
