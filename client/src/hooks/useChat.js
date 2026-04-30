@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 
 // In dev: use VITE_API_BASE_URL if set, otherwise Vite proxy handles /api → localhost:VITE_BACKEND_PORT
 // In prod: same-origin /api (no env var needed)
@@ -25,6 +26,7 @@ export const useChat = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { currentLang } = useLanguage();
 
   // Ref-based guard: prevents duplicate in-flight requests regardless of render cycles
   const inFlightRef = useRef(false);
@@ -50,13 +52,18 @@ export const useChat = () => {
     try {
       let response;
       try {
+        const langInfo = LANGUAGES.find(l => l.code === currentLang);
+        const langPrompt = (currentLang !== 'en' && langInfo) 
+          ? `\n\n[CRITICAL SYSTEM INSTRUCTION: You MUST respond entirely in the ${langInfo.name} language.]` 
+          : '';
+
         response = await fetch(`${API_BASE}/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Client-Request-Id': clientRequestId,
           },
-          body: JSON.stringify({ message: trimmed, persona, context }),
+          body: JSON.stringify({ message: trimmed + langPrompt, persona, context }),
         });
       } catch {
         throw new Error('Backend server is not running. Please ensure the server is started on port 8080.');

@@ -81,8 +81,12 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    // Prevent auto-scrolling to the bottom on initial page load
-    if (messages.length > 1 || isLoading) {
+    // Only auto-scroll when loading starts (to see indicator) 
+    // or when the user just sent a message.
+    // Do NOT scroll when the assistant finishes responding.
+    if (isLoading) {
+      scrollToBottom();
+    } else if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
       scrollToBottom();
     }
   }, [messages, isLoading]);
@@ -100,7 +104,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 h-[calc(100vh-4rem)] flex flex-col">
       <SectionHeader
         title="VoteWise Assistant"
         subtitle="Ask neutral, factual questions about the Indian election process."
@@ -134,7 +138,7 @@ const ChatPage = () => {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 bg-transparent">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex max-w-[90%] sm:max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`flex max-w-[95%] sm:max-w-[85%] lg:max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center shadow-sm border ${msg.role === 'user' ? 'bg-gradient-to-br from-secondary to-[#4F46E5] ml-3 border-secondary' : 'bg-blue-50 mr-3 border-blue-100 backdrop-blur-md'}`}>
                   {msg.role === 'user' ? <User className="text-white" size={20} /> : <Bot className="text-secondary" size={20} />}
                 </div>

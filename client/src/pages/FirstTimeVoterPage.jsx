@@ -104,7 +104,7 @@ const FirstTimeVoterPage = () => {
       />
       
       {/* Progress Bar */}
-      <div className="bg-white/95 backdrop-blur-2xl border border-border shadow-lg rounded-3xl p-6 mb-10 sticky top-24 z-30">
+      <div className="bg-white/40 backdrop-blur-lg border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.1)] rounded-3xl p-6 mb-10 sticky top-24 z-30">
         <div className="flex justify-between items-center mb-3">
           <h3 className="font-extrabold text-primary">Your Progress</h3>
           <span className="font-bold text-secondary text-lg">{progressPercentage}%</span>
