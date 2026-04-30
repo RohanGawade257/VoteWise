@@ -48,22 +48,22 @@ const AccordionItem = ({ faq, isOpen, onClick }) => {
         aria-expanded={isOpen}
         aria-controls={`faq-answer-${faq.id}`}
         id={`faq-question-${faq.id}`}
-        className="w-full text-left py-5 px-6 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary focus:bg-background/50 hover:bg-background/50 transition-colors"
+        className="w-full text-left py-6 px-8 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-slate-50 hover:bg-slate-50 transition-all"
       >
-        <span className="font-semibold text-text text-lg pr-8">{faq.question}</span>
+        <span className={`font-semibold text-lg pr-8 transition-colors ${isOpen ? 'text-secondary' : 'text-primary'}`}>{faq.question}</span>
         {isOpen ? (
           <ChevronUp className="text-secondary flex-shrink-0" size={24} />
         ) : (
-          <ChevronDown className="text-muted flex-shrink-0" size={24} />
+          <ChevronDown className="text-slate-400 flex-shrink-0" size={24} />
         )}
       </button>
       <div 
         id={`faq-answer-${faq.id}`}
         role="region"
         aria-labelledby={`faq-question-${faq.id}`}
-        className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 py-4 opacity-100' : 'max-h-0 py-0 opacity-0'}`}
+        className={`px-8 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isOpen ? 'max-h-[500px] py-4 pb-8 opacity-100' : 'max-h-0 py-0 opacity-0'}`}
       >
-        <p className="text-muted leading-relaxed">{faq.answer}</p>
+        <p className="text-slate-600 font-light leading-relaxed text-lg">{faq.answer}</p>
       </div>
     </div>
   );
@@ -83,7 +83,7 @@ const FAQPage = () => {
         subtitle="Common beginner queries about the Indian electoral process."
       />
       
-      <div className="clay-card overflow-hidden mt-8">
+      <div className="bg-white border border-border shadow-md rounded-[2rem] overflow-hidden mt-10">
         {faqs.map((faq) => (
           <AccordionItem 
             key={faq.id} 

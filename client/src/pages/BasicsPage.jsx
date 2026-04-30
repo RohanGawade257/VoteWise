@@ -5,24 +5,24 @@ import politicsBasics from '../data/politicsBasics.json';
 
 const BasicsCard = ({ item, isOpen, onClick }) => {
   return (
-    <div className="clay-card clay-card-hoverable overflow-hidden mb-6">
+    <div className="bg-white backdrop-blur-xl border border-border shadow-sm rounded-[2rem] overflow-hidden mb-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-lg">
       <button
         onClick={onClick}
         aria-expanded={isOpen}
         aria-controls={`basics-content-${item.id}`}
         id={`basics-header-${item.id}`}
-        className="w-full text-left p-6 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary focus:bg-background/50 hover:bg-background/50 transition-colors"
+        className="w-full text-left p-6 sm:p-8 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-slate-50 hover:bg-slate-50 transition-colors"
       >
         <div className="flex items-center">
-          <div className="bg-primary/10 p-3 rounded-lg mr-4">
-            <BookOpen className="text-primary" size={24} />
+          <div className="bg-blue-50 p-4 rounded-2xl mr-5 shadow-sm border border-blue-100">
+            <BookOpen className="text-secondary drop-shadow-sm" size={26} />
           </div>
-          <h3 className="font-bold text-xl text-primary">{item.title}</h3>
+          <h3 className="font-extrabold text-2xl text-primary tracking-tight">{item.title}</h3>
         </div>
         {isOpen ? (
-          <ChevronUp className="text-secondary flex-shrink-0" size={24} />
+          <ChevronUp className="text-secondary flex-shrink-0" size={28} />
         ) : (
-          <ChevronDown className="text-muted flex-shrink-0" size={24} />
+          <ChevronDown className="text-slate-400 flex-shrink-0" size={28} />
         )}
       </button>
       
@@ -30,29 +30,29 @@ const BasicsCard = ({ item, isOpen, onClick }) => {
         id={`basics-content-${item.id}`}
         role="region"
         aria-labelledby={`basics-header-${item.id}`}
-        className={`px-6 border-t border-border overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 py-6 opacity-100' : 'max-h-0 py-0 opacity-0 border-transparent'}`}
+        className={`px-6 sm:px-8 border-t border-border overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isOpen ? 'max-h-[800px] py-8 opacity-100' : 'max-h-0 py-0 opacity-0 border-transparent'}`}
       >
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
-            <h4 className="flex items-center text-sm font-bold text-muted uppercase tracking-wider mb-2">
-              <Info size={16} className="mr-2" /> What is it?
+            <h4 className="flex items-center text-sm font-bold text-secondary uppercase tracking-wider mb-3">
+              <Info size={18} className="mr-2" /> What is it?
             </h4>
-            <p className="text-text leading-relaxed">{item.simpleExplanation}</p>
+            <p className="text-slate-800 font-light leading-relaxed text-lg">{item.simpleExplanation}</p>
           </div>
           
-          <div className="bg-background p-4 rounded-lg border border-border">
-            <h4 className="text-sm font-bold text-secondary mb-1">Example:</h4>
-            <p className="text-text italic">{item.example}</p>
+          <div className="bg-slate-50 p-5 rounded-2xl border border-border shadow-inner">
+            <h4 className="text-sm font-bold text-secondary mb-2">Example:</h4>
+            <p className="text-slate-700 font-light italic text-lg">{item.example}</p>
           </div>
           
           <div>
-            <h4 className="flex items-center text-sm font-bold text-muted uppercase tracking-wider mb-2">
-              <AlertCircle size={16} className="mr-2" /> Why it matters
+            <h4 className="flex items-center text-sm font-bold text-secondary uppercase tracking-wider mb-3">
+              <AlertCircle size={18} className="mr-2" /> Why it matters
             </h4>
-            <p className="text-text leading-relaxed">{item.whyItMatters}</p>
+            <p className="text-slate-800 font-light leading-relaxed text-lg">{item.whyItMatters}</p>
           </div>
           
-          <div className="text-xs text-muted text-right mt-4 pt-4 border-t border-border">
+          <div className="text-xs text-slate-500 text-right mt-6 pt-5 border-t border-border font-light">
             Source: {item.source} | Last Verified: {item.lastVerified}
           </div>
         </div>

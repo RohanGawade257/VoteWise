@@ -1,0 +1,11 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern Checkmark / Checkbox symbol -->
+  <g transform="translate(40, 40)">
+    <rect x="0" y="0" width="120" height="120" rx="30" fill="#4F46E5" fill-opacity="0.1" />
+    <rect x="0" y="0" width="120" height="120" rx="30" stroke="#4F46E5" stroke-width="8" stroke-opacity="0.2" />
+    
+    <!-- Dynamic Checkmark -->
+    <path d="M35 60L55 80L90 40" stroke="#4F46E5" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M35 60L55 80L90 40" stroke="#38BDF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" transform="translate(4, 4)" stroke-opacity="0.6"/>
+  </g>
+</svg>

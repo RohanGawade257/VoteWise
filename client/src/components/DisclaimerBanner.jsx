@@ -3,11 +3,13 @@ import { Info } from 'lucide-react';
 
 const DisclaimerBanner = () => {
   return (
-    <div className="bg-warning/10 text-warning px-4 py-3 text-sm flex items-start sm:items-center space-x-3">
-      <Info className="flex-shrink-0 mt-0.5 sm:mt-0" size={18} />
-      <p>
-        <strong>Disclaimer:</strong> VoteWise is a non-partisan, educational platform. We do not endorse any political party, candidate, or ideology. Information provided is for civic education purposes only.
-      </p>
+    <div className="bg-slate-100 border-b border-border text-muted px-4 py-2.5 text-xs sm:text-sm flex justify-center items-center space-x-3 w-full">
+      <div className="flex items-center justify-center max-w-5xl">
+        <Info className="flex-shrink-0 mr-2 text-secondary" size={16} />
+        <p className="font-light tracking-wide">
+          <strong className="text-primary font-medium">VoteWise</strong> is a non-partisan educational platform. We do not endorse any political party.
+        </p>
+      </div>
     </div>
   );
 };

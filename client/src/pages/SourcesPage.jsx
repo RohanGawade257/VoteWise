@@ -44,44 +44,46 @@ const SourcesPage = () => {
         subtitle="VoteWise relies strictly on official, verified data to ensure neutrality."
       />
       
-      <div className="clay-card p-6 md:p-8 mb-8">
-        <div className="flex items-start space-x-4 mb-6">
-          <ShieldAlert className="text-secondary mt-1 flex-shrink-0" size={24} />
+      <div className="bg-white backdrop-blur-xl border border-border shadow-md rounded-3xl p-6 md:p-8 mb-10">
+        <div className="flex items-start space-x-5 mb-2">
+          <div className="bg-blue-50 p-3 rounded-2xl flex-shrink-0 mt-1 shadow-inner border border-blue-100">
+            <ShieldAlert className="text-secondary drop-shadow-sm" size={28} />
+          </div>
           <div>
-            <h3 className="text-xl font-bold text-primary mb-2">Neutral Educational Disclaimer</h3>
-            <p className="text-text leading-relaxed">
+            <h3 className="text-2xl font-extrabold text-primary mb-3 tracking-tight">Neutral Educational Disclaimer</h3>
+            <p className="text-slate-700 font-light leading-relaxed text-lg">
               VoteWise is a <strong>non-partisan, independent educational platform</strong>. We are not affiliated with the Election Commission of India, any government body, or any political party. Our sole mission is civic education. We do not endorse any candidates, ideologies, or parties. All information provided is for educational purposes only.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="clay-card overflow-hidden">
-        <div className="bg-background border-b border-border px-6 py-4 flex justify-between items-center">
-          <h3 className="font-bold text-lg text-primary">Verified Data Sources</h3>
-          <div className="flex items-center text-sm text-muted bg-surface px-3 py-1 rounded-full border border-border">
-            <Calendar size={14} className="mr-2" />
+      <div className="bg-white backdrop-blur-xl border border-border shadow-md rounded-3xl overflow-hidden">
+        <div className="bg-slate-50 border-b border-border px-6 sm:px-8 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h3 className="font-extrabold text-xl text-primary">Verified Data Sources</h3>
+          <div className="flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 bg-white px-4 py-2 rounded-full border border-border shadow-sm">
+            <Calendar size={14} className="mr-2 text-secondary" />
             <span>Last Updated: {currentDate}</span>
           </div>
         </div>
         <div className="divide-y divide-border">
           {sources.map((source, index) => (
-            <div key={index} className="p-6 hover:bg-background/50 transition-colors">
-              <h4 className="text-lg font-bold text-text mb-1 flex items-center">
+            <div key={index} className="p-6 sm:p-8 hover:bg-slate-50 transition-all">
+              <h4 className="text-xl font-bold text-primary mb-2 flex items-center">
                 {source.name}
                 {source.url !== "#" && (
-                  <a href={source.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-secondary hover:text-secondary/80">
+                  <a href={source.url} target="_blank" rel="noopener noreferrer" className="ml-3 text-secondary hover:text-white transition-colors bg-blue-50 p-1.5 rounded-lg border border-blue-100 hover:bg-primary hover:border-primary">
                     <ExternalLink size={16} />
                   </a>
                 )}
               </h4>
-              <p className="text-muted">{source.description}</p>
+              <p className="text-slate-600 font-light leading-relaxed">{source.description}</p>
             </div>
           ))}
         </div>
       </div>
       
-      <div className="mt-8 text-center text-sm text-muted">
+      <div className="mt-8 text-center text-sm text-slate-400 font-light">
         <p>Information may change dynamically. Always verify critical dates and rules from official sources.</p>
       </div>
     </div>

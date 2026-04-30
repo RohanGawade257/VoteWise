@@ -107,10 +107,10 @@ const ChatPage = () => {
         centered={true}
       />
 
-      <div className="flex-1 clay-card flex flex-col overflow-hidden mb-4 border-none">
+      <div className="flex-1 bg-white/95 backdrop-blur-3xl rounded-[2.5rem] border border-border flex flex-col overflow-hidden mb-4 shadow-xl">
 
         {/* Chat Header / Settings */}
-        <div className="bg-background border-b border-border p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="bg-slate-50 border-b border-border p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center text-sm">
             <ShieldCheck className="text-success mr-2" size={18} />
             <span className="text-muted">AI responses are filtered for neutrality.</span>
@@ -120,7 +120,7 @@ const ChatPage = () => {
             <select
               value={persona}
               onChange={(e) => setPersona(e.target.value)}
-              className="bg-surface border border-border text-text text-sm rounded-lg focus:ring-secondary focus:border-secondary block p-2"
+              className="bg-white border border-border text-primary text-sm rounded-xl focus:ring-secondary focus:border-secondary block p-2 backdrop-blur-md outline-none transition-all shadow-sm"
             >
               <option value="general">General</option>
               <option value="first-time-voter">First-Time Voter</option>
@@ -131,26 +131,26 @@ const ChatPage = () => {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-background/50">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 bg-transparent">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-secondary ml-3' : 'bg-primary mr-3'}`}>
-                  {msg.role === 'user' ? <User className="text-surface" size={20} /> : <Bot className="text-surface" size={20} />}
+              <div className={`flex max-w-[90%] sm:max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center shadow-sm border ${msg.role === 'user' ? 'bg-gradient-to-br from-secondary to-[#4F46E5] ml-3 border-secondary' : 'bg-blue-50 mr-3 border-blue-100 backdrop-blur-md'}`}>
+                  {msg.role === 'user' ? <User className="text-white" size={20} /> : <Bot className="text-secondary" size={20} />}
                 </div>
 
                 <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                   {/* Message bubble */}
-                  <div className={`p-4 rounded-2xl ${
+                  <div className={`p-5 rounded-3xl ${
                     msg.role === 'user'
-                      ? 'bg-secondary text-surface rounded-tr-none'
+                      ? 'bg-gradient-to-r from-secondary to-[#4F46E5] text-white rounded-tr-sm shadow-md'
                       : msg.safetyBlocked
-                        ? 'bg-warning/10 border border-warning/20 text-text rounded-tl-none'
-                        : 'bg-surface border border-border text-text rounded-tl-none shadow-sm'
+                        ? 'bg-amber-50 border border-amber-200 text-slate-800 rounded-tl-sm'
+                        : 'bg-white backdrop-blur-md border border-border text-slate-800 rounded-tl-sm shadow-sm'
                   }`}>
                     {/* Safety-blocked badge */}
                     {msg.safetyBlocked && (
-                      <div className="flex items-center text-warning font-bold mb-2 text-sm">
+                      <div className="flex items-center text-amber-600 font-bold mb-2 text-sm">
                         <AlertTriangle size={16} className="mr-1" /> Request Blocked
                       </div>
                     )}
@@ -177,13 +177,13 @@ const ChatPage = () => {
           {isLoading && (
             <div className="flex justify-start">
               <div className="flex flex-row max-w-[75%]">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary mr-3 flex items-center justify-center">
-                  <Bot className="text-surface" size={20} />
+                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-50 mr-3 flex items-center justify-center border border-blue-100 backdrop-blur-md shadow-sm">
+                  <Bot className="text-secondary" size={20} />
                 </div>
-                <div className="bg-surface border border-border p-4 rounded-2xl rounded-tl-none flex space-x-2 items-center">
-                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="bg-slate-50 backdrop-blur-md border border-border p-5 rounded-3xl rounded-tl-sm flex space-x-2 items-center shadow-sm">
+                  <div className="w-2.5 h-2.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2.5 h-2.5 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             </div>
@@ -193,14 +193,14 @@ const ChatPage = () => {
 
         {/* Error Banner */}
         {error && (
-          <div className="bg-warning/10 border-t border-warning/20 p-3 flex justify-between items-center text-sm gap-2">
-            <span className="text-warning flex items-center gap-2">
+          <div className="bg-amber-50 border-t border-amber-200 p-3 flex justify-between items-center text-sm gap-2">
+            <span className="text-amber-600 flex items-center gap-2">
               <AlertTriangle size={16} />
               {error}
             </span>
             <button
               onClick={clearError}
-              className="flex-shrink-0 text-warning hover:text-warning/70 transition-colors"
+              className="flex-shrink-0 text-amber-600 hover:text-amber-700 transition-colors"
               aria-label="Dismiss error"
             >
               <X size={16} />
@@ -209,18 +209,18 @@ const ChatPage = () => {
         )}
 
         {/* Input Area */}
-        <div className="p-4 bg-surface border-t border-border">
+        <div className="p-4 sm:p-6 bg-slate-100 backdrop-blur-xl border-t border-border">
           {/* Suggested Prompts — show while conversation is still short */}
           {messages.length <= 2 && (
             <div className="mb-4">
-              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Try asking:</p>
+              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Try asking:</p>
               <div className="flex flex-wrap gap-2">
                 {SUGGESTED_PROMPTS.map((prompt, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handleSuggestedPrompt(prompt)}
-                    className="bg-background border border-border hover:border-secondary hover:text-secondary text-text text-sm py-1.5 px-3 rounded-full transition-colors text-left"
+                    className="bg-white border border-border hover:border-secondary hover:text-primary text-muted text-sm py-2 px-4 rounded-full transition-all text-left shadow-sm hover:shadow-md hover:bg-slate-50"
                     disabled={isLoading}
                   >
                     {prompt}
@@ -236,20 +236,20 @@ const ChatPage = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about the election process..."
-              className="w-full bg-background border border-border text-text rounded-xl pl-4 pr-12 py-4 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all shadow-sm"
+              className="w-full bg-white border border-border text-primary rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-all shadow-sm backdrop-blur-sm"
               disabled={isLoading}
               maxLength={500}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="absolute right-2 p-2 bg-secondary text-surface rounded-lg hover:bg-secondary/90 disabled:opacity-50 disabled:hover:bg-secondary transition-colors flex items-center justify-center"
+              className="absolute right-2 p-2.5 bg-secondary text-white rounded-xl hover:bg-[#2563EB] disabled:opacity-50 disabled:hover:bg-secondary transition-all shadow-[0_4px_14px_rgba(59,130,246,0.4)] flex items-center justify-center"
             >
               {isLoading ? <RefreshCw size={20} className="animate-spin" /> : <Send size={20} />}
             </button>
           </form>
-          <div className="text-center mt-2">
-            <span className="text-xs text-muted">VoteWise AI can make mistakes. Always verify important dates with the ECI.</span>
+          <div className="text-center mt-3">
+            <span className="text-xs text-muted font-light">VoteWise AI can make mistakes. Always verify important dates with the ECI.</span>
           </div>
         </div>
       </div>
