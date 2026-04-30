@@ -15,7 +15,7 @@ from app.services.source_router import (
     CURRENT_PARTY_FALLBACK,
     CURRENT_PUBLIC_FALLBACK,
 )
-from app.prompts.system_prompt import normalize_persona
+from app.services.tone_service import normalize_persona
 from app.config import settings
 from app.utils.logging import get_logger
 
@@ -171,60 +171,6 @@ def _strip_markdown_artifacts(text: str) -> str:
     return text.strip()
 
 
-# ---------------------------------------------------------------------------
-# Intent-specific fallback templates
-# ---------------------------------------------------------------------------
-
-_TEMPLATE_FIRST_TIME_VOTER = """**First-Time Voter Guide**
-
-Here is what you need to do to vote for the first time in India:
-
-- **Check eligibility** — Must be 18+, an Indian citizen, and a resident of your constituency
-- **Register online** — Visit [voters.eci.gov.in](https://voters.eci.gov.in) and fill **Form 6**. Upload a photo, age proof, and address proof
-- **Verify your name** — Check your name in the Electoral Roll at [electoralsearch.eci.gov.in](https://electoralsearch.eci.gov.in)
-- **Find your booth** — Your polling station is assigned after registration. Check it on [voters.eci.gov.in](https://voters.eci.gov.in) or call **1950**
-- **Carry valid ID on polling day** — EPIC (Voter ID), Aadhaar, PAN, Passport, or Driving Licence are accepted
-- **Vote using the EVM** — Press the button next to your candidate. A VVPAT slip will confirm your vote
-
-> For official actions, always verify on [voters.eci.gov.in](https://voters.eci.gov.in) or [eci.gov.in](https://eci.gov.in)."""
-
-_TEMPLATE_EVM_VVPAT = """**EVM and VVPAT — Explained Simply**
-
-- **EVM (Electronic Voting Machine)** — A tamper-proof device used in Indian elections instead of paper ballots. You press a blue button next to your chosen candidate's name and symbol
-- **VVPAT (Voter Verifiable Paper Audit Trail)** — A machine attached to the EVM that prints a paper slip showing your voted candidate's name and symbol. The slip is visible through a glass window for **7 seconds** before it drops into a sealed box
-- Both machines are manufactured by government PSUs (BEL and ECIL) and are rigorously tested before each election
-
-> Source: [eci.gov.in](https://eci.gov.in)"""
-
-_TEMPLATE_NOTA = """**NOTA — None of the Above**
-
-- **NOTA** stands for **None of the Above**
-- It was introduced in Indian elections from **2013** onwards following a Supreme Court order
-- You can press NOTA on the EVM if you do not wish to vote for any of the listed candidates
-- NOTA votes **are counted** and reported, but they do not cause a re-election. The candidate with the most votes still wins
-- NOTA is a way to formally register dissatisfaction with all candidates
-
-> Source: [eci.gov.in](https://eci.gov.in)"""
-
-_TEMPLATE_COALITION = """**Coalition Government — Explained**
-
-- A **coalition government** is formed when no single political party wins an outright majority (more than 50% of seats) in Parliament
-- Multiple parties with compatible goals join together and agree to share power
-- The **largest party** in the coalition typically provides the Prime Minister
-- A coalition must prove its majority through a **confidence vote** in the Lok Sabha
-- India has had several coalition governments, particularly since the 1990s
-
-> Source: [eci.gov.in](https://eci.gov.in)"""
-
-_TEMPLATE_LIVE_SCHEDULE = """**Election Dates & Schedule**
-
-Election dates and schedules change with every election cycle and cannot be reliably answered from a static knowledge base.
-
-**Please verify the latest information directly from:**
-- [eci.gov.in](https://eci.gov.in) — Official Election Commission of India
-- [results.eci.gov.in](https://results.eci.gov.in) — Live results
-- Official ECI press releases and notifications"""
-
 
 def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> ChatResponse:
     """
@@ -245,14 +191,16 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
 
     # ── Known-intent: use curated template ──────────────────────────────────
     template_map = {
-        "first_time_voter": _TEMPLATE_FIRST_TIME_VOTER,
-        "evm_vvpat":        _TEMPLATE_EVM_VVPAT,
-        "nota":             _TEMPLATE_NOTA,
-        "coalition":        _TEMPLATE_COALITION,
-        "live_schedule":    _TEMPLATE_LIVE_SCHEDULE,
+        "first_time_voter": "fallback_first_time_voter",
+        "evm_vvpat":        "fallback_evm_vvpat",
+        "nota":             "fallback_nota",
+        "coalition":        "fallback_coalition",
+        "live_schedule":    "fallback_live_schedule",
     }
     if fallback_intent in template_map:
-        answer = template_map[fallback_intent]
+        from app.services.tone_service import apply_tone_to_template
+        template_name = template_map[fallback_intent]
+        answer = apply_tone_to_template(template_name, persona)
         # Build source list appropriate for the intent
         if fallback_intent == "first_time_voter":
             sources = [
@@ -324,13 +272,8 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
                 seen.add(c["source_url"])
     else:
         # No usable chunks — give a safe, helpful redirect
-        answer = (
-            "I wasn't able to find a confident answer in the VoteWise knowledge base for that question.\n\n"
-            "Please visit the official sources below for accurate information:\n"
-            "- [voters.eci.gov.in](https://voters.eci.gov.in) — Voter registration and status\n"
-            "- [eci.gov.in](https://eci.gov.in) — Election Commission of India\n"
-            "- **Voter Helpline:** 1950"
-        )
+        from app.services.tone_service import apply_tone_to_template
+        answer = apply_tone_to_template("fallback_no_chunks", persona)
         sources = [SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official")]
 
     return ChatResponse(

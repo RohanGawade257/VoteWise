@@ -4,6 +4,7 @@ Detects and blocks partisan, illegal, or harmful requests.
 """
 import re
 from app.utils.logging import get_logger
+from app.services.tone_service import apply_tone_to_template
 
 logger = get_logger("safety_service")
 
@@ -41,30 +42,6 @@ BLOCK_PATTERNS = [
 
 COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in BLOCK_PATTERNS]
 
-SAFE_REFUSAL = (
-    "I can help you understand elections and political concepts, but I cannot influence your vote, "
-    "promote or attack any party, or assist with illegal activity. Your vote is private and independent. "
-    "For official information, visit eci.gov.in or voters.eci.gov.in."
-)
-
-_SAFE_REFUSAL_BY_PERSONA: dict[str, str] = {
-    "general": SAFE_REFUSAL,
-    "first-time-voter": (
-        "VoteWise cannot recommend which party or candidate to vote for — your vote is entirely your own choice. "
-        "I can explain how elections work, but who you vote for is completely up to you. "
-        "For official information, visit voters.eci.gov.in."
-    ),
-    "student": (
-        "That's a tricky question! VoteWise is like a neutral teacher — I explain how elections work, "
-        "but I don't tell anyone which party is good or bad. That decision belongs to you when you vote! "
-        "For official information, visit eci.gov.in."
-    ),
-    "elderly": (
-        "I am sorry. I cannot help with this. "
-        "VoteWise does not support or oppose any party. "
-        "Your vote is private. Please visit eci.gov.in for official information."
-    ),
-}
 
 
 def check_message(message: str, persona: str = "general") -> dict:
@@ -77,7 +54,9 @@ def check_message(message: str, persona: str = "general") -> dict:
     for pattern in COMPILED_PATTERNS:
         if pattern.search(message):
             logger.warning(f"Safety block triggered | pattern='{pattern.pattern[:40]}...' | persona={persona}")
-            refusal = _SAFE_REFUSAL_BY_PERSONA.get(persona, SAFE_REFUSAL)
+            is_illegal = bool(re.search(r"(fake|hack|tamper|multiple|impersonat)", pattern.pattern, re.IGNORECASE))
+            template_name = "safety_illegal" if is_illegal else "safety_political"
+            refusal = apply_tone_to_template(template_name, persona)
             return {
                 "safe": False,
                 "reason": "Request violates VoteWise neutrality policy.",

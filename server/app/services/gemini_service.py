@@ -9,8 +9,9 @@ from google.genai import types
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 from app.config import settings
-from app.prompts.system_prompt import SYSTEM_PROMPT, build_persona_instruction
+from app.prompts.system_prompt import SYSTEM_PROMPT
 from app.services import rag_service
+from app.services.tone_service import get_tone_rules, apply_tone_to_template
 from app.services.rag_service import get_confidence, is_in_civic_scope
 from app.utils.logging import get_logger
 from app.models import ChatResponse, SourceItem, SafetyInfo, MetaInfo
@@ -77,12 +78,7 @@ async def generate_chat_response(
     # return a focused scope message without touching Gemini.
     if use_rag and not is_in_civic_scope(f"{context or ''} {message}"):
         logger.info(f"Out-of-scope query detected | persona={persona} | msg='{message[:50]}'")
-        scope_msg = (
-            "VoteWise focuses on Indian elections, voter registration, and civic education. "
-            "I'm not able to help with that topic, but I'd be happy to answer any questions "
-            "about voting, EVMs, election timelines, or how to register as a voter. "
-            "What would you like to know?"
-        )
+        scope_msg = apply_tone_to_template("out_of_scope", persona)
         return ChatResponse(
             answer=scope_msg,
             sources=[],
@@ -117,9 +113,10 @@ async def generate_chat_response(
             source_files = list(dict.fromkeys(c["source_file"] for c in rag_chunks))
 
     # --- 4. Build the full prompt ---
-    persona_instruction = build_persona_instruction(persona)
+    tone_rules = get_tone_rules(persona)
     parts = [
-        f"PERSONA INSTRUCTION: {persona_instruction}",
+        f"PERSONA INSTRUCTION: {tone_rules['instruction']}",
+        f"FORMAT RULES: {tone_rules['format']}",
     ]
 
     # Confidence-aware prompt instruction
