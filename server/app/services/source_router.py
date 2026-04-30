@@ -309,15 +309,36 @@ def _safe_now() -> datetime:
     return datetime.now(_APP_TZ)
 
 
-def _get_greeting() -> str:
-    """Return a friendly greeting with the current IST time of day."""
+def _time_period() -> str:
     hour = _safe_now().hour
     if hour < 12:
-        period = "morning"
+        return "morning"
     elif hour < 17:
-        period = "afternoon"
-    else:
-        period = "evening"
+        return "afternoon"
+    return "evening"
+
+
+def _get_greeting(persona: str = "general") -> str:
+    """Return a persona-aware greeting with time-of-day salutation."""
+    period = _time_period()
+    if persona == "elderly":
+        return (
+            f"Namaste. I am VoteWise. Good {period}. "
+            "I am here to help you with questions about voting. "
+            "I will explain things slowly, one step at a time."
+        )
+    if persona == "student":
+        return (
+            f"Hi there! Good {period}! I'm VoteWise — think of me like a simple guide "
+            "for learning how elections work in India. "
+            "Ask me anything and I'll explain it in easy words!"
+        )
+    if persona == "first-time-voter":
+        return (
+            f"Good {period}! Welcome! I'm VoteWise, and I'm here to help you "
+            "understand everything about voting — step by step, from the very beginning. "
+            "Your vote matters. What would you like to know first?"
+        )
     return (
         f"Good {period}! I'm VoteWise, your civic education assistant. "
         "I can help you with voter registration, election processes, EVMs, "
@@ -325,29 +346,128 @@ def _get_greeting() -> str:
     )
 
 
-def _get_date_response() -> str:
-    """Return the current date/time in IST."""
-    now = _safe_now()
+def _get_identity_response(persona: str = "general") -> str:
+    """Return a persona-aware assistant identity response."""
+    if persona == "elderly":
+        return (
+            "My name is VoteWise. I help people learn about elections and voting. "
+            "I will explain things simply and slowly. "
+            "You can ask me anything about voting or registration."
+        )
+    if persona == "student":
+        return (
+            "I'm VoteWise! Think of me like a simple study guide for elections in India. "
+            "I explain how voting works, what EVMs are, and why elections matter — "
+            "all in easy words. What do you want to learn?"
+        )
+    if persona == "first-time-voter":
+        return (
+            "I'm VoteWise! I'm here to help first-time voters like you understand "
+            "every step of the voting process — from registration to casting your vote. "
+            "Don't worry, I'll guide you through it all. Ask me anything!"
+        )
     return (
-        f"Today is **{now.strftime('%A, %d %B %Y')}** "
-        f"and the current time is **{now.strftime('%I:%M %p')} IST**."
+        "I'm VoteWise, a neutral civic education assistant that helps people "
+        "understand Indian elections, voting steps, timelines, and democracy basics."
     )
+
+
+def _get_date_response(persona: str = "general") -> str:
+    """Return the current date/time in IST, worded for the persona."""
+    now = _safe_now()
+    date_str = f"**{now.strftime('%A, %d %B %Y')}**"
+    time_str = f"**{now.strftime('%I:%M %p')} IST**"
+    if persona == "elderly":
+        return f"Today is {date_str}. The time now is {time_str}."
+    if persona == "student":
+        return f"Today's date is {date_str} and the time is {time_str}."
+    return f"Today is {date_str} and the current time is {time_str}."
+
+
+def _get_followup_response(persona: str = "general") -> str:
+    """Return a persona-aware clarification prompt for unclear follow-ups."""
+    if persona == "elderly":
+        return (
+            "I can help. Please tell me what you would like to know. "
+            "For example: How to register? Where to vote? What is a voting machine?"
+        )
+    if persona == "student":
+        return (
+            "Got it! What topic do you want to learn about? "
+            "For example: How to register to vote? What is an EVM? How do elections work?"
+        )
+    if persona == "first-time-voter":
+        return (
+            "No worries! Tell me what you'd like help with. "
+            "For example: How do I register? What happens on polling day? What ID do I need?"
+        )
+    return (
+        "Sure — what would you like me to explain: voter registration, "
+        "polling day, EVM/VVPAT, election timeline, or politics basics?"
+    )
+
+
+def _persona_intro(intent: str, persona: str) -> str:
+    """Return a short persona-aware intro prefix prepended to educational direct answers."""
+    intros: dict[str, dict[str, str]] = {
+        "voter_registration": {
+            "first-time-voter": "Great step — let me walk you through registration from the beginning!\n\n",
+            "student":          "Here's how voter registration works — think of it like signing up officially:\n\n",
+            "elderly":          "Good. I will explain how to register. Here are the steps:\n\n",
+            "general":          "",
+        },
+        "evm_vvpat": {
+            "first-time-voter": "Voting machines are easy to use. Let me explain them step by step:\n\n",
+            "student":          "Let's learn about voting machines! Think of the EVM like a simple button-press box:\n\n",
+            "elderly":          "I will explain the voting machine simply. It is easy to use:\n\n",
+            "general":          "",
+        },
+        "nota": {
+            "first-time-voter": "You have an option called NOTA. Here is what it means:\n\n",
+            "student":          "NOTA is like a 'none of the above' option on a quiz — but for real elections:\n\n",
+            "elderly":          "NOTA means you do not like any candidate. Here is how it works:\n\n",
+            "general":          "",
+        },
+        "polling_day": {
+            "first-time-voter": "Here is exactly what happens on your first polling day — step by step:\n\n",
+            "student":          "Polling day is like exam day — but for democracy! Here's what happens:\n\n",
+            "elderly":          "Here is what you do on voting day. I will explain step by step:\n\n",
+            "general":          "",
+        },
+        "coalition_government": {
+            "first-time-voter": "Here is an important concept about how governments are formed:\n\n",
+            "student":          "Think of a coalition like a group project where no one team won enough seats alone:\n\n",
+            "elderly":          "A coalition is when parties join together to form the government. Here is more:\n\n",
+            "general":          "",
+        },
+        "voter_list_check": {
+            "first-time-voter": "Before polling day, check that your name is in the voter list. Here's how:\n\n",
+            "elderly":          "Here is how to check if your name is on the voter list:\n\n",
+            "general":          "",
+        },
+    }
+    return intros.get(intent, {}).get(persona, "")
 
 
 # ---------------------------------------------------------------------------
 # Main classifier
 # ---------------------------------------------------------------------------
 
-def classify_intent(message: str, context: str | None = None) -> dict:
+def classify_intent(message: str, context: str | None = None, persona: str = "general") -> dict:
     """
     Classify a user message into one of the intent categories.
 
+    Args:
+        message: raw user message
+        context: optional page/session context string
+        persona: normalised persona key (general | first-time-voter | student | elderly)
+
     Returns:
         {
-            "intent": str,           # intent category name
-            "direct_response": str | None,  # if set, return this directly (no RAG/Gemini)
-            "use_rag": bool,         # whether to use RAG retrieval
-            "use_model": bool,       # whether to call Gemini
+            "intent": str,
+            "direct_response": str | None,  # if set, return directly (no RAG/Gemini)
+            "use_rag": bool,
+            "use_model": bool,
         }
     """
     cleaned = message.strip()
@@ -357,10 +477,10 @@ def classify_intent(message: str, context: str | None = None) -> dict:
     if len(cleaned.split()) <= 5:
         for pat in _GREETING_RE:
             if pat.search(lower):
-                logger.info(f"Intent: greeting | msg='{cleaned[:40]}'")
+                logger.info(f"Intent: greeting | persona={persona} | msg='{cleaned[:40]}'")
                 return {
                     "intent": "greeting",
-                    "direct_response": _get_greeting(),
+                    "direct_response": _get_greeting(persona),
                     "use_rag": False,
                     "use_model": False,
                 }
@@ -368,10 +488,10 @@ def classify_intent(message: str, context: str | None = None) -> dict:
     # --- 2. Assistant identity ---
     for pat in _IDENTITY_RE:
         if pat.search(lower):
-            logger.info(f"Intent: assistant_identity | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: assistant_identity | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "assistant_identity",
-                "direct_response": IDENTITY_RESPONSE,
+                "direct_response": _get_identity_response(persona),
                 "use_rag": False,
                 "use_model": False,
             }
@@ -380,10 +500,10 @@ def classify_intent(message: str, context: str | None = None) -> dict:
     if not _DATE_EXCLUDE.search(lower):
         for pat in _DATE_RE:
             if pat.search(lower):
-                logger.info(f"Intent: current_date_time | msg='{cleaned[:40]}'")
+                logger.info(f"Intent: current_date_time | persona={persona} | msg='{cleaned[:40]}'")
                 return {
                     "intent": "current_date_time",
-                    "direct_response": _get_date_response(),
+                    "direct_response": _get_date_response(persona),
                     "use_rag": False,
                     "use_model": False,
                 }
@@ -392,16 +512,15 @@ def classify_intent(message: str, context: str | None = None) -> dict:
     if lower in _FOLLOWUP_EXACT or (len(cleaned.split()) <= 3 and lower.rstrip("?.!,") in _FOLLOWUP_EXACT):
         has_context = bool(context and context.strip())
         if not has_context:
-            logger.info(f"Intent: unclear_followup (no context) | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: unclear_followup (no context) | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "unclear_followup",
-                "direct_response": FOLLOWUP_CLARIFICATION,
+                "direct_response": _get_followup_response(persona),
                 "use_rag": False,
                 "use_model": False,
             }
         else:
-            # Has context — let it pass through to RAG/Gemini with the context
-            logger.info(f"Intent: unclear_followup (has context, passing through) | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: unclear_followup (has context, passing through) | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "unclear_followup",
                 "direct_response": None,
@@ -417,8 +536,8 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 return {
                     "intent": "current_election_info",
                     "direct_response": None,
-                    "use_rag": False,   
-                    "use_model": True,  
+                    "use_rag": False,
+                    "use_model": True,
                 }
             else:
                 logger.info(f"Intent: current_election_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
@@ -437,8 +556,8 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 return {
                     "intent": "current_party_info",
                     "direct_response": None,
-                    "use_rag": False,   
-                    "use_model": True,  
+                    "use_rag": False,
+                    "use_model": True,
                 }
             else:
                 logger.info(f"Intent: current_party_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
@@ -457,8 +576,8 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 return {
                     "intent": "current_public_info",
                     "direct_response": None,
-                    "use_rag": False,   
-                    "use_model": True,  
+                    "use_rag": False,
+                    "use_model": True,
                 }
             else:
                 logger.info(f"Intent: current_public_info (search disabled → safe fallback) | msg='{cleaned[:40]}'")
@@ -480,68 +599,68 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 "use_model": True,
             }
 
-    # --- 5. Voter registration (direct answer — deterministic, no RAG noise) ---
+    # --- 5. Voter registration (direct answer with persona intro) ---
     for pat in _VOTER_REG_RE:
         if pat.search(lower):
-            logger.info(f"Intent: voter_registration | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: voter_registration | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "voter_registration",
-                "direct_response": VOTER_REGISTRATION_RESPONSE,
+                "direct_response": _persona_intro("voter_registration", persona) + VOTER_REGISTRATION_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
 
-    # --- 10. EVM / VVPAT ---
+    # --- 10. EVM / VVPAT (direct answer with persona intro) ---
     for pat in _EVM_RE:
         if pat.search(lower):
-            logger.info(f"Intent: evm_vvpat | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: evm_vvpat | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "evm_vvpat",
-                "direct_response": EVM_VVPAT_RESPONSE,
+                "direct_response": _persona_intro("evm_vvpat", persona) + EVM_VVPAT_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
 
-    # --- 11. NOTA ---
+    # --- 11. NOTA (direct answer with persona intro) ---
     for pat in _NOTA_RE:
         if pat.search(lower):
-            logger.info(f"Intent: nota | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: nota | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "nota",
-                "direct_response": NOTA_RESPONSE,
+                "direct_response": _persona_intro("nota", persona) + NOTA_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
 
-    # --- 12. Coalition government ---
+    # --- 12. Coalition government (direct answer with persona intro) ---
     for pat in _COALITION_RE:
         if pat.search(lower):
-            logger.info(f"Intent: coalition_government | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: coalition_government | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "coalition_government",
-                "direct_response": COALITION_RESPONSE,
+                "direct_response": _persona_intro("coalition_government", persona) + COALITION_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
 
-    # --- 13. Polling day ---
+    # --- 13. Polling day (direct answer with persona intro) ---
     for pat in _POLLING_DAY_RE:
         if pat.search(lower):
-            logger.info(f"Intent: polling_day | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: polling_day | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "polling_day",
-                "direct_response": POLLING_DAY_RESPONSE,
+                "direct_response": _persona_intro("polling_day", persona) + POLLING_DAY_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
 
-    # --- 14. Voter list / electoral roll check ---
+    # --- 14. Voter list / electoral roll check (direct answer with persona intro) ---
     for pat in _VOTER_LIST_RE:
         if pat.search(lower):
-            logger.info(f"Intent: voter_list_check | msg='{cleaned[:40]}'")
+            logger.info(f"Intent: voter_list_check | persona={persona} | msg='{cleaned[:40]}'")
             return {
                 "intent": "voter_list_check",
-                "direct_response": VOTER_LIST_RESPONSE,
+                "direct_response": _persona_intro("voter_list_check", persona) + VOTER_LIST_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }
@@ -557,7 +676,7 @@ def classify_intent(message: str, context: str | None = None) -> dict:
                 "use_model": False,
             }
 
-    # --- 8. Civic static (keyword match) ---
+    # --- Civic static (keyword match) ---
     for keyword in _CIVIC_KEYWORDS:
         if keyword in lower:
             logger.info(f"Intent: civic_static (keyword='{keyword}') | msg='{cleaned[:40]}'")

@@ -23,6 +23,7 @@ class MetaInfo(BaseModel):
     intent: str = "unknown"
     used_direct_answer: bool = False
     used_model: bool = False
+    persona_used: str = "general"
     checkedAt: Optional[str] = None
     sourceType: Optional[str] = None
 

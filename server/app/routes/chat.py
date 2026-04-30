@@ -13,6 +13,7 @@ from app.services.source_router import (
     CURRENT_PARTY_FALLBACK,
     CURRENT_PUBLIC_FALLBACK,
 )
+from app.prompts.system_prompt import normalize_persona
 from app.config import settings
 from app.utils.logging import get_logger
 
@@ -77,6 +78,7 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
             intent="civic_static",
             used_direct_answer=False,
             used_model=False,
+            persona_used="general",  # patched by caller
         )
     )
 
@@ -88,14 +90,18 @@ async def chat(request: Request, body: ChatRequest):
     client_req_id = request.headers.get("X-Client-Request-Id", "none")
     t_start = time.monotonic()
 
+    # ── Persona normalisation ────────────────────────────────────────────────
+    raw_persona = body.persona
+    persona = normalize_persona(raw_persona)
     logger.info(
         f"POST /api/chat START | server_req={server_req_id} | client_req={client_req_id} "
-        f"| ip={request.client.host} | persona={body.persona} | msgLen={len(body.message)}"
+        f"| ip={request.client.host} | persona_received={raw_persona!r} "
+        f"| persona_normalized={persona!r} | msgLen={len(body.message)}"
     )
 
     # ── 1. Safety pre-screen (no Gemini call) ───────────────────────────────
-    logger.info(f"[{server_req_id}] Safety check START")
-    safety_check = safety_service.check_message(body.message)
+    logger.info(f"[{server_req_id}] Safety check START | persona={persona}")
+    safety_check = safety_service.check_message(body.message, persona=persona)
     if not safety_check["safe"]:
         elapsed = round((time.monotonic() - t_start) * 1000)
         logger.info(f"[{server_req_id}] Safety BLOCKED | geminiCalled=False | durationMs={elapsed}")
@@ -110,16 +116,18 @@ async def chat(request: Request, body: ChatRequest):
                 intent="political_persuasion_or_illegal",
                 used_direct_answer=True,
                 used_model=False,
+                persona_used=persona,
             )
         )
     logger.info(f"[{server_req_id}] Safety check PASSED")
 
     # ── 2. Intent classification ─────────────────────────────────────────────
-    intent_result = classify_intent(body.message, context=body.context)
+    intent_result = classify_intent(body.message, context=body.context, persona=persona)
     intent = intent_result["intent"]
     direct_response = intent_result.get("direct_response")
     use_rag = intent_result.get("use_rag", True)
     use_model = intent_result.get("use_model", True)
+    logger.info(f"[{server_req_id}] Persona instruction applied | persona={persona} | intent={intent}")
 
     is_live_intent = intent in _LIVE_INTENTS
     grounding_enabled = settings.ENABLE_GOOGLE_SEARCH_GROUNDING
@@ -166,6 +174,7 @@ async def chat(request: Request, body: ChatRequest):
                 intent=intent,
                 used_direct_answer=True,
                 used_model=False,
+                persona_used=persona,
                 checkedAt=checked_at,
                 sourceType=source_type
             )
@@ -204,10 +213,11 @@ async def chat(request: Request, body: ChatRequest):
             f"| sourceType={response.meta.sourceType}"
         )
 
-        # Patch meta with intent fields (gemini_service sets its own model/used_rag)
+        # Patch meta with intent and persona fields (gemini_service sets its own model/used_rag)
         response.meta.intent = intent
         response.meta.used_direct_answer = False
         response.meta.used_model = True
+        response.meta.persona_used = persona
 
         # Override model name if grounding was used
         if response.meta.used_search_grounding:
@@ -263,6 +273,7 @@ async def chat(request: Request, body: ChatRequest):
                     intent=intent,
                     used_direct_answer=False,
                     used_model=True,  # Gemini was called (but failed)
+                    persona_used=persona,
                     checkedAt=checked_at,
                     sourceType="unverified_fallback"
                 )
@@ -275,4 +286,5 @@ async def chat(request: Request, body: ChatRequest):
         )
         fallback = _build_rag_fallback(body.message, body.persona, fallback_reason)
         fallback.meta.intent = intent
+        fallback.meta.persona_used = persona
         return fallback

@@ -47,17 +47,40 @@ SAFE_REFUSAL = (
     "For official information, visit eci.gov.in or voters.eci.gov.in."
 )
 
-def check_message(message: str) -> dict:
+_SAFE_REFUSAL_BY_PERSONA: dict[str, str] = {
+    "general": SAFE_REFUSAL,
+    "first-time-voter": (
+        "VoteWise cannot recommend which party or candidate to vote for — your vote is entirely your own choice. "
+        "I can explain how elections work, but who you vote for is completely up to you. "
+        "For official information, visit voters.eci.gov.in."
+    ),
+    "student": (
+        "That's a tricky question! VoteWise is like a neutral teacher — I explain how elections work, "
+        "but I don't tell anyone which party is good or bad. That decision belongs to you when you vote! "
+        "For official information, visit eci.gov.in."
+    ),
+    "elderly": (
+        "I am sorry. I cannot help with this. "
+        "VoteWise does not support or oppose any party. "
+        "Your vote is private. Please visit eci.gov.in for official information."
+    ),
+}
+
+
+def check_message(message: str, persona: str = "general") -> dict:
     """
     Returns {"safe": True} if message is safe to process.
     Returns {"safe": False, "reason": "...", "response": "..."} if blocked.
+
+    The refusal wording is adjusted for the persona (elderly/student get simpler text).
     """
     for pattern in COMPILED_PATTERNS:
         if pattern.search(message):
-            logger.warning(f"Safety block triggered | pattern='{pattern.pattern[:40]}...'")
+            logger.warning(f"Safety block triggered | pattern='{pattern.pattern[:40]}...' | persona={persona}")
+            refusal = _SAFE_REFUSAL_BY_PERSONA.get(persona, SAFE_REFUSAL)
             return {
                 "safe": False,
                 "reason": "Request violates VoteWise neutrality policy.",
-                "response": SAFE_REFUSAL
+                "response": refusal,
             }
     return {"safe": True}

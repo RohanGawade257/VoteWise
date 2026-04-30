@@ -48,11 +48,84 @@ TRUSTED CONTEXT:
 You will be provided with retrieved knowledge from VoteWise's official knowledge base. Always prioritize this context. If the context does not cover the question, answer from general civic knowledge but clearly note if you are uncertain.
 """
 
-def build_persona_instruction(persona: str) -> str:
-    instructions = {
-        "first-time-voter": "The user is a first-time voter. Use simple, encouraging, step-by-step language. Assume they are new to the entire process.",
-        "student": "The user is a school or college student. Use analogies, keep it engaging and beginner-friendly.",
-        "elderly": "The user may be an elderly person. Use very short sentences, avoid jargon, go one step at a time, and be patient.",
-        "general": "The user is a general adult citizen. Be concise, clear, and assume moderate civic awareness."
+# ---------------------------------------------------------------------------
+# Persona normalisation
+# ---------------------------------------------------------------------------
+
+_PERSONA_ALIASES: dict[str, str] = {
+    "school-student":   "student",
+    "school_student":   "student",
+    "schoolstudent":    "student",
+    "first_time_voter": "first-time-voter",
+    "firsttimevoter":   "first-time-voter",
+    "first time voter": "first-time-voter",
+    "first-time voter": "first-time-voter",
+}
+
+_VALID_PERSONAS: frozenset[str] = frozenset({"general", "first-time-voter", "student", "elderly"})
+
+
+def normalize_persona(raw: "str | None") -> str:
+    """
+    Normalise a raw persona string from the frontend.
+
+    Maps known aliases (e.g. 'school-student' -> 'student') and falls back to
+    'general' for empty or unrecognised values.
+    """
+    if not raw:
+        return "general"
+    p = raw.strip().lower()
+    normalised = _PERSONA_ALIASES.get(p, p)
+    return normalised if normalised in _VALID_PERSONAS else "general"
+
+
+# ---------------------------------------------------------------------------
+# Persona instruction builder (canonical function name per requirements)
+# ---------------------------------------------------------------------------
+
+def get_persona_instruction(persona: str) -> str:
+    """
+    Return a detailed Gemini-ready persona instruction string.
+
+    Inject this into the prompt AFTER the system prompt and BEFORE any RAG context.
+    Persona must be a normalised key: general | first-time-voter | student | elderly.
+    """
+    instructions: dict[str, str] = {
+        "general": (
+            "TONE — General adult citizen. "
+            "Be clear, neutral, and concise. Use plain explanations. "
+            "Assume moderate civic awareness. Avoid over-explaining obvious steps. "
+            "Use bullet points only when listing multiple items."
+        ),
+        "first-time-voter": (
+            "TONE — First-Time Voter. "
+            "The user has never voted before and may feel uncertain. "
+            "Be warm, friendly, and encouraging throughout. "
+            "Explain every step simply and in sequence — assume nothing is obvious. "
+            "End your answer by telling the user exactly what their next action should be. "
+            "Remind them gently that their vote is entirely private."
+        ),
+        "student": (
+            "TONE — School Student. "
+            "Use very simple, everyday words. Avoid all legal or technical jargon. "
+            "If a concept is complex, add one short relatable analogy to make it click. "
+            "Write like a patient, friendly teacher explaining to a complete beginner. "
+            "Keep sentences short and the answer easy to remember."
+        ),
+        "elderly": (
+            "TONE — Elderly citizen. "
+            "Use very short sentences — one idea per sentence only. "
+            "Present one step or piece of information at a time. "
+            "Maintain a calm, respectful, and patient tone throughout. "
+            "Always expand abbreviations on first use (e.g. EVM — Electronic Voting Machine). "
+            "Use simple bullet points. Include at most 4-5 points per reply. "
+            "If more steps are needed, give the first few and offer to continue."
+        ),
     }
     return instructions.get(persona, instructions["general"])
+
+
+# Backward-compatible alias — gemini_service.py already imports this name
+def build_persona_instruction(persona: str) -> str:
+    """Alias for get_persona_instruction (backward-compatible)."""
+    return get_persona_instruction(persona)
