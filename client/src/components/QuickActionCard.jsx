@@ -6,7 +6,7 @@ const QuickActionCard = ({ title, description, icon: Icon, to, colorClass = 'fro
   return (
     <Link 
       to={to} 
-      className="group relative bg-surface border border-border rounded-2xl p-8 hover:border-transparent transition-all duration-500 flex flex-col h-full overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-2"
+      className="group relative clay-card clay-card-hoverable p-8 flex flex-col h-full overflow-hidden"
     >
       {/* Animated gradient border on hover */}
       <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} opacity-0 group-hover:opacity-10 transition-opacity duration-500 z-0`}></div>

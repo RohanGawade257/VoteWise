@@ -8,10 +8,10 @@ const TimelineItem = ({ item, isOpen, onClick }) => {
     <div className="mb-4 last:mb-0">
       <button
         onClick={onClick}
-        className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex justify-between items-center ${
+        className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex justify-between items-center ${
           isOpen 
-            ? 'bg-surface border-secondary shadow-md' 
-            : 'bg-background border-border hover:border-secondary/50'
+            ? 'clay-card border-secondary' 
+            : 'bg-background border border-border hover:border-secondary/50'
         }`}
       >
         <span className="font-bold text-primary">{item.title}</span>
@@ -23,7 +23,7 @@ const TimelineItem = ({ item, isOpen, onClick }) => {
           isOpen ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="bg-surface border border-border rounded-xl p-5 space-y-4 shadow-sm ml-2 md:ml-6 border-l-4 border-l-secondary">
+        <div className="clay-card p-5 space-y-4 shadow-sm ml-2 md:ml-6 border-l-4 border-l-secondary border-t-0 border-r-0 border-b-0 rounded-l-none">
           <div>
             <h5 className="text-sm font-bold text-muted uppercase tracking-wider mb-1">Simple Explanation</h5>
             <p className="text-text">{item.simpleExplanation}</p>

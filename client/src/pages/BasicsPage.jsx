@@ -5,7 +5,7 @@ import politicsBasics from '../data/politicsBasics.json';
 
 const BasicsCard = ({ item, isOpen, onClick }) => {
   return (
-    <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden mb-6 transition-all hover:border-secondary/50">
+    <div className="clay-card clay-card-hoverable overflow-hidden mb-6">
       <button
         onClick={onClick}
         aria-expanded={isOpen}

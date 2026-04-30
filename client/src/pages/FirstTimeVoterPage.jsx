@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Circle, ExternalLink, MessageSquare, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import SectionHeader from '../components/SectionHeader';
 import guideSteps from '../data/guideSteps.json';
 
@@ -103,7 +104,7 @@ const FirstTimeVoterPage = () => {
       />
       
       {/* Progress Bar */}
-      <div className="bg-surface border border-border rounded-xl p-6 mb-10 shadow-sm sticky top-20 z-30">
+      <div className="clay-card p-6 mb-10 sticky top-20 z-30">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-primary">Your Progress</h3>
           <span className="font-bold text-secondary">{progressPercentage}%</span>
@@ -136,9 +137,9 @@ const FirstTimeVoterPage = () => {
         <div className="mt-12 bg-success/10 border border-success/30 rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
           <h2 className="text-2xl font-bold text-success mb-2">Congratulations! 🎉</h2>
           <p className="text-text mb-6">You have completed the preparation guide. You are now an informed citizen ready to participate in the democratic process.</p>
-          <a href="/process" className="inline-flex items-center text-surface bg-success hover:bg-success/90 font-bold py-3 px-6 rounded-lg transition-colors">
+          <Link to="/process" className="inline-flex items-center text-surface bg-success hover:bg-success/90 font-bold py-3 px-6 rounded-lg transition-colors">
             See the Full Election Process <ArrowRight className="ml-2" size={18} />
-          </a>
+          </Link>
         </div>
       )}
     </div>

@@ -77,11 +77,14 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Prevent auto-scrolling to the bottom on initial page load
+    if (messages.length > 1 || isLoading) {
+      scrollToBottom();
+    }
   }, [messages, isLoading]);
 
   const handleSubmit = (e) => {
@@ -104,7 +107,7 @@ const ChatPage = () => {
         centered={true}
       />
 
-      <div className="flex-1 bg-surface border border-border rounded-2xl shadow-sm flex flex-col overflow-hidden mb-4">
+      <div className="flex-1 clay-card flex flex-col overflow-hidden mb-4 border-none">
 
         {/* Chat Header / Settings */}
         <div className="bg-background border-b border-border p-4 flex flex-col sm:flex-row justify-between items-center gap-4">

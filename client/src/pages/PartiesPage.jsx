@@ -21,10 +21,10 @@ const PartyCard = ({ party, isSelected, onClick }) => {
   return (
     <button
       onClick={() => onClick(party)}
-      className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col h-full ${
+      className={`w-full text-left p-6 transition-all duration-300 flex flex-col h-full ${
         isSelected 
-          ? 'border-primary bg-primary/5 shadow-md' 
-          : 'border-border bg-surface hover:border-primary/30 hover:shadow-sm'
+          ? 'clay-card border-secondary bg-primary/5' 
+          : 'clay-card clay-card-hoverable'
       }`}
     >
       <div className="flex justify-between items-start mb-4">
@@ -52,11 +52,11 @@ const PartyDetailPanel = ({ party, onClose }) => {
   if (!party) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/20 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-surface w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="clay-card w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="sticky top-0 bg-surface border-b border-border p-6 flex justify-between items-start z-10">
+        <div className="sticky top-0 bg-surface/90 backdrop-blur-md border-b border-border/50 p-6 flex justify-between items-start z-10 rounded-t-3xl">
           <div>
             <div className="flex items-center space-x-3 mb-2">
               <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded">

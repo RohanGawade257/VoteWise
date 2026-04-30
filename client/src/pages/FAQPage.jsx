@@ -83,7 +83,7 @@ const FAQPage = () => {
         subtitle="Common beginner queries about the Indian electoral process."
       />
       
-      <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden mt-8">
+      <div className="clay-card overflow-hidden mt-8">
         {faqs.map((faq) => (
           <AccordionItem 
             key={faq.id} 

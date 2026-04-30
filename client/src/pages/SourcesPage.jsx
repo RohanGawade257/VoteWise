@@ -44,7 +44,7 @@ const SourcesPage = () => {
         subtitle="VoteWise relies strictly on official, verified data to ensure neutrality."
       />
       
-      <div className="bg-surface border border-border rounded-xl p-6 md:p-8 mb-8 shadow-sm">
+      <div className="clay-card p-6 md:p-8 mb-8">
         <div className="flex items-start space-x-4 mb-6">
           <ShieldAlert className="text-secondary mt-1 flex-shrink-0" size={24} />
           <div>
@@ -56,7 +56,7 @@ const SourcesPage = () => {
         </div>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
+      <div className="clay-card overflow-hidden">
         <div className="bg-background border-b border-border px-6 py-4 flex justify-between items-center">
           <h3 className="font-bold text-lg text-primary">Verified Data Sources</h3>
           <div className="flex items-center text-sm text-muted bg-surface px-3 py-1 rounded-full border border-border">
