@@ -6,7 +6,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from app.models import ChatRequest, ChatResponse, SafetyInfo, MetaInfo, SourceItem
+from app.models import ChatRequest, ChatResponse, SafetyInfo, MetaInfo, SourceItem, GuidedFlowInput
+from app.services import guided_flow_service
 from app.services import safety_service, gemini_service, rag_service
 from app.services.source_router import (
     classify_intent,
@@ -41,6 +42,46 @@ _LIVE_INTENT_FALLBACK = {
     "current_public_info":  CURRENT_PUBLIC_FALLBACK,
 }
 
+
+# ---------------------------------------------------------------------------
+# Guided flow response builder
+# ---------------------------------------------------------------------------
+
+def _build_guided_response(result: dict, persona: str) -> ChatResponse:
+    """
+    Convert a guided_flow_service result dict into a proper ChatResponse.
+    All non-guided meta fields are set to safe neutral defaults.
+    """
+    return ChatResponse(
+        answer=result["answer"],
+        sources=[
+            SourceItem(
+                title="Voter Registration Portal",
+                url="https://voters.eci.gov.in",
+                type="official"
+            ),
+            SourceItem(
+                title="Election Commission of India",
+                url="https://eci.gov.in",
+                type="official"
+            ),
+        ],
+        safety=SafetyInfo(blocked=False, reason=None),
+        meta=MetaInfo(
+            model="guided-flow",
+            used_rag=False,
+            used_search_grounding=False,
+            intent="first_time_voter_guided",
+            contextual_followup_intent=result.get("contextual_followup_intent"),
+            used_direct_answer=True,
+            used_model=False,
+            persona_used=persona,
+            guided_flow_active=True,
+            guided_flow_step=result.get("guided_flow_step"),
+            guided_flow_state=result.get("guided_flow_state", {}),
+            suggested_replies=result.get("suggested_replies", []),
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +389,33 @@ async def chat(request: Request, body: ChatRequest):
             )
         )
     logger.info(f"[{server_req_id}] Safety check PASSED")
+
+    # ── 1.5. Guided flow — runs BEFORE RAG / Gemini ─────────────────────────
+    # Completely optional: if guidedFlow is absent the block is skipped.
+    gf_input: GuidedFlowInput | None = body.guidedFlow
+
+    if gf_input is not None:
+        gf_active  = gf_input.active
+        gf_step    = gf_input.step
+        gf_state   = dict(gf_input.state or {})
+
+        # Case A: flow is already active — advance it
+        if gf_active and gf_step:
+            result = guided_flow_service.update_guided_flow(
+                body.message, gf_step, gf_state, persona
+            )
+            if not result.get("flow_complete", False):
+                logger.info(f"[{server_req_id}] Guided flow ADVANCED | step={result.get('guided_flow_step')}")
+                return _build_guided_response(result, persona)
+            # flow_complete=True → fall through to normal RAG/Gemini
+            logger.info(f"[{server_req_id}] Guided flow COMPLETE — handing off to normal pipeline")
+
+        # Case B: flow not active yet — check if this message should trigger it
+        elif not gf_active:
+            if guided_flow_service.detect_guided_flow_trigger(body.message):
+                result = guided_flow_service.start_guided_flow(persona)
+                logger.info(f"[{server_req_id}] Guided flow TRIGGERED | persona={persona}")
+                return _build_guided_response(result, persona)
 
     # ── 2. Intent classification ─────────────────────────────────────────────
     intent_result = classify_intent(body.message, context=body.context, persona=persona)

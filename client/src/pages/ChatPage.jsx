@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X, BookOpen } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X, BookOpen, Sparkles } from 'lucide-react';
 import { useChat } from '../hooks/useChat';
 import MessageMeta from '../components/MessageMeta';
 
 const SUGGESTED_PROMPTS = [
-  "I am 18. How do I register to vote?",
-  "Explain polling day like I am a school student.",
+  "Guide me as a first-time voter",
+  "I am 18 and want to vote for the first time",
   "What is EVM and VVPAT?",
-  "What is a coalition government?",
   "What is NOTA?",
   "How do I check my name in voter list?",
+  "What is a coalition government?",
 ];
 
 // ---------------------------------------------------------------------------
@@ -56,6 +56,32 @@ const MD_COMPONENTS = {
 // ---------------------------------------------------------------------------
 // ChatPage
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// SuggestedReplies — guided flow chips below last assistant message
+// ---------------------------------------------------------------------------
+const SuggestedReplies = ({ replies, onSelect, disabled }) => {
+  if (!replies || replies.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {replies.map((reply, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onSelect(reply)}
+          disabled={disabled}
+          className="flex items-center gap-1.5 bg-blue-50 border border-secondary/30 text-secondary text-sm font-medium py-1.5 px-3.5 rounded-full hover:bg-secondary hover:text-white hover:border-secondary transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Sparkles size={11} className="flex-shrink-0" />
+          {reply}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// ChatPage
+// ---------------------------------------------------------------------------
 const ChatPage = () => {
   const [input, setInput] = useState('');
   const [persona, setPersona] = useState('general');
@@ -67,7 +93,7 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    // Only auto-scroll when loading starts (to see indicator) 
+    // Only auto-scroll when loading starts (to see indicator)
     // or when the user just sent a message.
     // Do NOT scroll when the assistant finishes responding.
     if (isLoading) {
@@ -88,6 +114,11 @@ const ChatPage = () => {
     if (isLoading) return;
     sendMessage(prompt, persona);
   };
+
+  // Guided reply chips — only shown below the LAST assistant message
+  const lastAssistantIdx = messages.reduce(
+    (acc, msg, i) => (msg.role === 'assistant' ? i : acc), -1
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 min-h-[calc(100svh-7rem)] flex flex-col">
@@ -165,6 +196,17 @@ const ChatPage = () => {
                     </div>
                   )}
 
+                  {/* Guided reply chips — only on the LAST assistant message */}
+                  {msg.role === 'assistant' &&
+                    messages.indexOf(msg) === lastAssistantIdx &&
+                    !isLoading && (
+                    <SuggestedReplies
+                      replies={msg.meta?.suggested_replies || []}
+                      onSelect={handleSuggestedPrompt}
+                      disabled={isLoading}
+                    />
+                  )}
+
                   {/* Answer provenance badges, confidence, sources */}
                   {msg.role === 'assistant' && (
                     <MessageMeta
@@ -215,20 +257,24 @@ const ChatPage = () => {
 
         {/* Input Area */}
         <div className="flex-shrink-0 p-3 sm:p-5 lg:p-6 bg-slate-100 backdrop-blur-xl border-t border-border">
-          {/* Suggested Prompts — show while conversation is still short */}
-          {messages.length <= 2 && (
+          {/* Static quick prompts — only before any real conversation */}
+          {messages.length <= 1 && (
             <div className="mb-3 sm:mb-4">
-              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Try asking:</p>
+              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Quick start:</p>
               <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
                 {SUGGESTED_PROMPTS.map((prompt, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handleSuggestedPrompt(prompt)}
-                    className="flex-shrink-0 bg-white border border-border hover:border-secondary hover:text-primary text-muted text-sm py-2 px-4 rounded-full transition-all text-left shadow-sm hover:shadow-md hover:bg-slate-50"
+                    className={`flex-shrink-0 border text-sm py-2 px-4 rounded-full transition-all text-left shadow-sm ${
+                      idx === 0
+                        ? 'bg-secondary/10 border-secondary/40 text-secondary font-semibold hover:bg-secondary hover:text-white'
+                        : 'bg-white border-border text-muted hover:border-secondary hover:text-primary hover:bg-slate-50'
+                    }`}
                     disabled={isLoading}
                   >
-                    {prompt}
+                    {idx === 0 && '✨ '}{prompt}
                   </button>
                 ))}
               </div>

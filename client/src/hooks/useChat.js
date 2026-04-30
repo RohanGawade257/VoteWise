@@ -21,12 +21,27 @@ export const useChat = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Namaste! I am VoteWise Assistant. I can help answer your questions about the Indian election process, voter registration, and democracy basics. How can I help you today?'
+      content: 'Namaste! I am VoteWise Assistant. I can help answer your questions about the Indian election process, voter registration, and democracy basics.\n\nWant me to guide you step-by-step as a first-time voter?',
+      meta: {
+        suggested_replies: [
+          'Guide me as a first-time voter',
+          'I am 18 and want to vote',
+          'What is EVM and VVPAT?',
+          'How do I check my name in voter list?',
+        ],
+      },
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { currentLang } = useLanguage();
+
+  // Guided flow state — tracks the active journey across messages
+  const guidedFlowRef = useRef({
+    active: false,
+    step: null,
+    state: {},
+  });
 
   // Ref-based guard: prevents duplicate in-flight requests regardless of render cycles
   const inFlightRef = useRef(false);
@@ -53,9 +68,16 @@ export const useChat = () => {
       let response;
       try {
         const langInfo = LANGUAGES.find(l => l.code === currentLang);
-        const langPrompt = (currentLang !== 'en' && langInfo) 
-          ? `\n\n[CRITICAL SYSTEM INSTRUCTION: You MUST respond entirely in the ${langInfo.name} language.]` 
+        const langPrompt = (currentLang !== 'en' && langInfo)
+          ? `\n\n[CRITICAL SYSTEM INSTRUCTION: You MUST respond entirely in the ${langInfo.name} language.]`
           : '';
+
+        // Snapshot the current guided flow state to send with this request
+        const guidedFlowPayload = {
+          active: guidedFlowRef.current.active,
+          step: guidedFlowRef.current.step,
+          state: guidedFlowRef.current.state,
+        };
 
         response = await fetch(`${API_BASE}/chat`, {
           method: 'POST',
@@ -63,7 +85,12 @@ export const useChat = () => {
             'Content-Type': 'application/json',
             'X-Client-Request-Id': clientRequestId,
           },
-          body: JSON.stringify({ message: trimmed + langPrompt, persona, context }),
+          body: JSON.stringify({
+            message: trimmed + langPrompt,
+            persona,
+            context,
+            guidedFlow: guidedFlowPayload,
+          }),
         });
       } catch {
         throw new Error('Backend server is not running. Please ensure the server is started on port 8080.');
@@ -74,6 +101,21 @@ export const useChat = () => {
 
       if (!response.ok) {
         throw new Error(getErrorMessage(response.status, data.error));
+      }
+
+      // Update guided flow state from backend meta
+      const meta = data.meta || {};
+      if (meta.guided_flow_active) {
+        guidedFlowRef.current = {
+          active: true,
+          step: meta.guided_flow_step || null,
+          state: meta.guided_flow_state || {},
+        };
+        console.log(`[useChat] Guided flow updated | step=${meta.guided_flow_step}`);
+      } else if (!meta.guided_flow_active && guidedFlowRef.current.active) {
+        // Flow completed or fell through — reset
+        guidedFlowRef.current = { active: false, step: null, state: {} };
+        console.log('[useChat] Guided flow COMPLETED — resetting');
       }
 
       setMessages(prev => [
