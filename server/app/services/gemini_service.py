@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from app.config import settings
 from app.prompts.system_prompt import SYSTEM_PROMPT, build_persona_instruction
 from app.services import rag_service
+from app.services.rag_service import get_confidence, is_in_civic_scope
 from app.utils.logging import get_logger
 from app.models import ChatResponse, SourceItem, SafetyInfo, MetaInfo
 
@@ -71,22 +72,85 @@ async def generate_chat_response(
         logger.error("GEMINI_API_KEY is missing from environment.")
         raise ValueError(ERROR_MESSAGES["no_key"])
 
-    # --- 2. RAG retrieval ---
-    rag_chunks = []
+    # --- 2. Out-of-scope guard (before RAG / before Gemini) ---
+    # If the query has zero civic keywords AND use_rag is True (civic flow),
+    # return a focused scope message without touching Gemini.
+    if use_rag and not is_in_civic_scope(f"{context or ''} {message}"):
+        logger.info(f"Out-of-scope query detected | persona={persona} | msg='{message[:50]}'")
+        scope_msg = (
+            "VoteWise focuses on Indian elections, voter registration, and civic education. "
+            "I'm not able to help with that topic, but I'd be happy to answer any questions "
+            "about voting, EVMs, election timelines, or how to register as a voter. "
+            "What would you like to know?"
+        )
+        return ChatResponse(
+            answer=scope_msg,
+            sources=[],
+            safety=SafetyInfo(blocked=False, reason=None),
+            meta=MetaInfo(
+                model="scope-guard",
+                used_rag=False,
+                used_search_grounding=False,
+                intent=intent,
+                used_direct_answer=True,
+                used_model=False,
+                rag_confidence="none",
+                rag_chunks_used=0,
+                source_files_used=[],
+            )
+        )
+
+    # --- 3. RAG retrieval (capped at 3 chunks) ---
+    rag_chunks: list = []
     rag_context_block = ""
     used_rag = False
-    
+    rag_confidence = "none"
+    source_files: list[str] = []
+
     if use_rag:
         rag_query = f"{context or ''} {message}".strip()
-        rag_chunks = rag_service.retrieve(rag_query, top_k=4)
+        rag_chunks = rag_service.retrieve(rag_query, top_k=3)   # hard cap at 3
         rag_context_block = rag_service.format_for_prompt(rag_chunks)
         used_rag = bool(rag_chunks)
+        if rag_chunks:
+            rag_confidence = rag_chunks[0].get("confidence", get_confidence(rag_chunks[0]["score"]))
+            source_files = list(dict.fromkeys(c["source_file"] for c in rag_chunks))
 
-    # --- 3. Build the full prompt ---
+    # --- 4. Build the full prompt ---
     persona_instruction = build_persona_instruction(persona)
     parts = [
         f"PERSONA INSTRUCTION: {persona_instruction}",
     ]
+
+    # Confidence-aware prompt instruction
+    if use_rag:
+        if rag_confidence == "high":
+            parts.append(
+                "CONFIDENCE: The knowledge base has a strong match for this question. "
+                "Answer confidently using the context below. Keep the answer under 180 words. "
+                "Use bullet points for steps. No long paragraphs."
+            )
+        elif rag_confidence == "medium":
+            parts.append(
+                "CONFIDENCE: The knowledge base has a partial match. "
+                "Answer using the context, but add a brief note if anything might need verification. "
+                "Keep the answer under 150 words. Use bullets for steps."
+            )
+        elif rag_confidence == "low":
+            parts.append(
+                "CONFIDENCE: The knowledge base match is weak. "
+                "If you cannot answer confidently from the context, ask the user a clarifying question instead of guessing. "
+                "Keep any answer under 120 words."
+            )
+        else:
+            # rag_confidence == 'none' but use_rag=True and civic scope passed
+            parts.append(
+                "CONFIDENCE: No specific knowledge base match found. "
+                "Answer from general civic knowledge if you are confident, otherwise politely ask the user to rephrase. "
+                "Keep response under 120 words."
+            )
+    else:
+        parts.append("Keep your answer under 180 words. Use bullet points for multi-step answers.")
     if context:
         parts.append(f"PAGE CONTEXT: The user is currently on the page: {context}")
         
@@ -108,9 +172,9 @@ async def generate_chat_response(
     parts.append(f"USER QUESTION: {message}")
     full_user_prompt = "\n\n".join(parts)
 
-    # --- 4. Build source list ---
+    # --- 5. Build source list ---
     sources = []
-    seen_urls = set()
+    seen_urls: set = set()
     for chunk in rag_chunks:
         if chunk["source_url"] not in seen_urls:
             sources.append(SourceItem(
@@ -124,16 +188,16 @@ async def generate_chat_response(
     if "https://eci.gov.in" not in seen_urls:
         sources.append(SourceItem(title="Election Commission of India", url="https://eci.gov.in", type="official"))
 
-    # --- 5. Call Gemini ---
-    logger.info(f"Calling Gemini | model={settings.GEMINI_MODEL} | persona={persona} | rag_chunks={len(rag_chunks)} | intent={intent}")
+    # --- 6. Call Gemini ---
+    logger.info(f"Calling Gemini | model={settings.GEMINI_MODEL} | persona={persona} | rag_chunks={len(rag_chunks)} | rag_confidence={rag_confidence} | intent={intent}")
 
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
         config = types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
-            temperature=0.4,  # Lower temp = more factual, less creative
-            max_output_tokens=800,
+            temperature=0.35,      # slightly lower = more factual
+            max_output_tokens=600, # ~180 words; encourages conciseness
         )
 
         # Optional: Google Search grounding for current info
@@ -203,12 +267,15 @@ async def generate_chat_response(
             sources=sources,
             safety=SafetyInfo(blocked=False, reason=None),
             meta=MetaInfo(
-                model=final_model_name, 
-                used_rag=used_rag, 
+                model=final_model_name,
+                used_rag=used_rag,
                 used_search_grounding=used_search,
                 intent=intent,
                 used_direct_answer=False,
                 used_model=True,
+                rag_confidence=rag_confidence,
+                rag_chunks_used=len(rag_chunks),
+                source_files_used=source_files,
                 checkedAt=checked_at,
                 sourceType=source_type
             )

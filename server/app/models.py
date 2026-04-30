@@ -24,6 +24,9 @@ class MetaInfo(BaseModel):
     used_direct_answer: bool = False
     used_model: bool = False
     persona_used: str = "general"
+    rag_confidence: str = "none"          # high | medium | low | none
+    rag_chunks_used: int = 0
+    source_files_used: List[str] = []
     checkedAt: Optional[str] = None
     sourceType: Optional[str] = None
 
