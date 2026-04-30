@@ -52,12 +52,14 @@ export const useChat = () => {
 
     // Hard guard — if a request is already in flight, do nothing
     if (inFlightRef.current) {
-      console.warn('[useChat] Duplicate send blocked — request already in flight');
+      if (import.meta.env.DEV) console.warn('[useChat] Duplicate send blocked — request already in flight');
       return;
     }
 
     const clientRequestId = crypto.randomUUID();
-    console.log(`[useChat] Sending | clientRequestId=${clientRequestId} | msg="${trimmed.slice(0, 40)}" | t=${new Date().toISOString()}`);
+    if (import.meta.env.DEV) {
+      console.log(`[useChat] Sending | clientRequestId=${clientRequestId} | msg="${trimmed.slice(0, 40)}" | t=${new Date().toISOString()}`);
+    }
 
     inFlightRef.current = true;
     setIsLoading(true);
@@ -97,7 +99,9 @@ export const useChat = () => {
       }
 
       const data = await response.json();
-      console.log(`[useChat] Response | clientRequestId=${clientRequestId} | status=${response.status} | ok=${response.ok}`);
+      if (import.meta.env.DEV) {
+        console.log(`[useChat] Response | clientRequestId=${clientRequestId} | status=${response.status} | ok=${response.ok}`);
+      }
 
       if (!response.ok) {
         throw new Error(getErrorMessage(response.status, data.error));
@@ -111,11 +115,11 @@ export const useChat = () => {
           step: meta.guided_flow_step || null,
           state: meta.guided_flow_state || {},
         };
-        console.log(`[useChat] Guided flow updated | step=${meta.guided_flow_step}`);
+        if (import.meta.env.DEV) console.log(`[useChat] Guided flow updated | step=${meta.guided_flow_step}`);
       } else if (!meta.guided_flow_active && guidedFlowRef.current.active) {
         // Flow completed or fell through — reset
         guidedFlowRef.current = { active: false, step: null, state: {} };
-        console.log('[useChat] Guided flow COMPLETED — resetting');
+        if (import.meta.env.DEV) console.log('[useChat] Guided flow COMPLETED — resetting');
       }
 
       setMessages(prev => [
@@ -130,7 +134,9 @@ export const useChat = () => {
         }
       ]);
     } catch (err) {
-      console.error(`[useChat] Error | clientRequestId=${clientRequestId} | ${err.message}`);
+      if (import.meta.env.DEV) {
+        console.error(`[useChat] Error | clientRequestId=${clientRequestId} | ${err.message}`);
+      }
       setError(err.message);
     } finally {
       inFlightRef.current = false;

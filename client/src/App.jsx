@@ -15,6 +15,7 @@ import PartiesPage from './pages/PartiesPage';
 import BasicsPage from './pages/BasicsPage';
 import FAQPage from './pages/FAQPage';
 import SourcesPage from './pages/SourcesPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
             <Route path="basics" element={<BasicsPage />} />
             <Route path="faq" element={<FAQPage />} />
             <Route path="sources" element={<SourcesPage />} />
+            {/* Catch-all: any unknown route shows the 404 page */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
