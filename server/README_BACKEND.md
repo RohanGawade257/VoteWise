@@ -124,8 +124,91 @@ POST /api/chat
 ## Environment Variables
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | ✅ Yes | — | From aistudio.google.com |
+| `GEMINI_API_KEY` | ✅ Yes | — | From aistudio.google.com — never committed to git |
 | `GEMINI_MODEL` | No | `gemini-2.0-flash` | Model name |
 | `PORT` | No | `8080` | Server port |
 | `ALLOWED_ORIGIN` | No | `http://localhost:5173` | CORS origin |
 | `ENABLE_GOOGLE_SEARCH_GROUNDING` | No | `false` | Toggle live search |
+| `CHAT_RATE_LIMIT` | No | `30/minute` | SlowAPI rate limit for `/api/chat` |
+| `RATE_LIMIT_ENABLED` | No | `true` | Set to `false` to disable rate limiting in dev |
+
+---
+
+## Security
+
+### API Key Storage
+`GEMINI_API_KEY` is loaded exclusively from the `.env` file via `python-dotenv`.  
+It is **never** logged, returned in responses, or committed to source control (`.gitignore` covers `.env`).
+
+### Rate Limiting — SlowAPI
+`/api/chat` is limited to **30 requests per minute per IP address** using [SlowAPI](https://github.com/laurentS/slowapi).
+
+- Controlled via `CHAT_RATE_LIMIT` env var (e.g. `"60/minute"` for dev).
+- Exceeding the limit returns clean JSON — **never an HTML error page**:
+```json
+{
+  "answer": "Too many requests. Please wait a moment and try again.",
+  "safety": { "blocked": true, "reason": "rate_limit" }
+}
+```
+- The health endpoint `/api/health` has no strict limit.
+
+### Request Validation — Pydantic
+All `/api/chat` requests are validated by `ChatRequest` (Pydantic v2):
+
+| Field | Rule |
+|-------|------|
+| `message` | String, stripped, non-empty, **max 1 500 chars** |
+| `persona` | One of `general`, `first-time-voter`, `student`, `elderly`; unknown values default to `general` |
+| `context` | Optional string, **max 1 000 chars** |
+| `guidedFlow` | Optional object — must never be a primitive |
+
+Invalid requests return HTTP 422 with clean JSON — no stack traces.
+
+### Safety Filters
+Civic safety checks run **before** any Gemini API call:
+- Political persuasion attempts → blocked with neutral refusal
+- Illegal activity requests (fake IDs, vote manipulation) → blocked
+- Out-of-scope personal data requests → blocked
+
+Safety is handled by `app/services/safety_service.py`.
+
+### Gemini Failures — RAG Fallback
+If Gemini is unavailable (quota, timeout, network):
+1. Static/civic questions → answered from the local VoteWise RAG knowledge base
+2. Live intents (election dates, party results) → safe redirect to `eci.gov.in`
+3. All fallback answers include a reminder to verify from official ECI sources
+
+### Error Handling
+Every error path returns valid JSON.  
+Stack traces, file paths, and API key hints are **never** sent to the client.  
+All errors are logged server-side with: `request_id | error_type | duration_ms`.
+
+### Running Security Tests
+```bash
+# With server running on port 8080:
+python server/scripts/test_api_security.py
+```
+
+### PowerShell Manual Tests
+```powershell
+# Empty message — expect HTTP 422
+$body = @{ message = ""; persona = "general" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/chat" -Method POST -ContentType "application/json" -Body $body
+
+# Oversized message — expect HTTP 422
+$body = @{ message = ("a" * 1600); persona = "general" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/chat" -Method POST -ContentType "application/json" -Body $body
+
+# Invalid persona — expect HTTP 200 (silently defaulted to general)
+$body = @{ message = "How do I register?"; persona = "hacker" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/chat" -Method POST -ContentType "application/json" -Body $body
+
+# Rate limit test — send 35 requests, watch for HTTP 429
+1..35 | ForEach-Object {
+  $b = @{ message = "How do I vote?"; persona = "general" } | ConvertTo-Json
+  $r = Invoke-WebRequest -Uri "http://localhost:8080/api/chat" -Method POST -ContentType "application/json" -Body $b -ErrorAction SilentlyContinue
+  Write-Host "Request $_ → $($r.StatusCode)"
+}
+```
+

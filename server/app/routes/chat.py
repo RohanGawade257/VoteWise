@@ -24,6 +24,9 @@ logger = get_logger("chat_route")
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
+# Rate limit string is loaded from env via settings (default: 30/minute)
+_CHAT_RATE_LIMIT = settings.CHAT_RATE_LIMIT
+
 # Intents that are handled by safety_service but should also carry intent metadata
 _SAFETY_REFUSAL_INTENTS = {"political_persuasion", "illegal_voting"}
 
@@ -296,19 +299,23 @@ def _build_rag_fallback(message: str, persona: str, fallback_reason: str) -> Cha
 
 
 @router.post("/api/chat", response_model=ChatResponse)
-@limiter.limit("30/minute")  # Generous for dev/demo; tighten in production
+@limiter.limit(_CHAT_RATE_LIMIT)
 async def chat(request: Request, body: ChatRequest):
     server_req_id = str(uuid.uuid4())[:8]
     client_req_id = request.headers.get("X-Client-Request-Id", "none")
     t_start = time.monotonic()
+
+    # ── Message is already stripped by Pydantic validator ─────────────────────
+    message = body.message  # guaranteed non-empty, max 1500 chars after validator
 
     # ── Persona normalisation ────────────────────────────────────────────────
     raw_persona = body.persona
     persona = normalize_persona(raw_persona)
     logger.info(
         f"POST /api/chat START | server_req={server_req_id} | client_req={client_req_id} "
-        f"| ip={request.client.host} | persona_received={raw_persona!r} "
-        f"| persona_normalized={persona!r} | msgLen={len(body.message)}"
+        f"| ip={request.client.host} | persona_normalized={persona!r} "
+        f"| msgLen={len(message)}"
+        # NOTE: never log message content or IP-linked data beyond length
     )
 
     # ── 1. Safety pre-screen (no Gemini call) ───────────────────────────────
@@ -467,8 +474,23 @@ async def chat(request: Request, body: ChatRequest):
     except (ValueError, PermissionError) as e:
         # Config / auth errors — not recoverable via RAG fallback
         elapsed = round((time.monotonic() - t_start) * 1000)
-        logger.error(f"[{server_req_id}] Config/auth error | durationMs={elapsed} | msg={str(e)}")
-        return JSONResponse(status_code=503, content={"error": str(e)})
+        # Log error type only; NEVER log raw str(e) as it may contain key hints
+        logger.error(
+            f"[{server_req_id}] Config/auth error | type={type(e).__name__} | durationMs={elapsed}"
+        )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "answer": (
+                    "The assistant is temporarily unavailable due to a configuration issue. "
+                    "Please try again later, or check "
+                    "[eci.gov.in](https://eci.gov.in) for official information."
+                ),
+                "sources": [],
+                "safety": {"blocked": True, "reason": "service_unavailable"},
+                "meta": {"used_model": False, "used_rag": False},
+            },
+        )
 
     except (ConnectionError, TimeoutError, RuntimeError) as e:
         # Gemini quota / overload / timeout
@@ -527,3 +549,23 @@ async def chat(request: Request, body: ChatRequest):
         fallback.meta.intent = intent
         fallback.meta.persona_used = persona
         return fallback
+
+    except Exception as e:
+        # Catch-all: unexpected errors — log full trace server-side, send safe JSON
+        elapsed = round((time.monotonic() - t_start) * 1000)
+        logger.error(
+            f"[{server_req_id}] Unexpected error | type={type(e).__name__} | durationMs={elapsed}",
+            exc_info=True,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "answer": (
+                    "Something went wrong while preparing the answer. "
+                    "Please try again, or check official ECI sources."
+                ),
+                "sources": [],
+                "safety": {"blocked": True, "reason": "internal_error"},
+                "meta": {"used_model": False, "used_rag": False},
+            },
+        )

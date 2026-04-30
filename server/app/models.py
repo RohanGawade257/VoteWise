@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Any, Dict
 
 # ---------------------------------------------------------------------------
-# Request
+# Request models
 # ---------------------------------------------------------------------------
 
 class GuidedFlowInput(BaseModel):
@@ -11,15 +11,47 @@ class GuidedFlowInput(BaseModel):
     step: Optional[str] = None        # current step name e.g. "ask_age_status"
     state: Dict[str, Any] = {}        # collected answers so far
 
+
 class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1, max_length=500)
-    persona: str = Field(default="general", pattern="^(general|first-time-voter|student|elderly)$")
-    context: Optional[str] = Field(default=None, max_length=500)
+    """
+    Validated chat request.
+
+    Security constraints:
+    - message: stripped, non-empty, max 1 500 chars
+    - persona: normalised to a known value; unknown values silently default to 'general'
+    - context: optional, max 1 000 chars
+    - guidedFlow: optional object, never a primitive
+    """
+    message: str = Field(..., max_length=1500, description="User question (max 1 500 chars).")
+    persona: str = Field(default="general", description="Assistant tone preset.")
+    context: Optional[str] = Field(default=None, max_length=1000)
     use_current_info: bool = False
-    guidedFlow: Optional[GuidedFlowInput] = None   # NEW — optional, backward-compatible
+    guidedFlow: Optional[GuidedFlowInput] = None
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Message cannot be empty or whitespace only.")
+        return v
+
+    @field_validator("persona")
+    @classmethod
+    def validate_persona(cls, v: str) -> str:
+        v = v.strip().lower()
+        # Alias: frontend may send 'school-student'
+        if v == "school-student":
+            return "student"
+        allowed = {"general", "first-time-voter", "student", "elderly"}
+        if v not in allowed:
+            # Silently default — no 422 for unknown persona
+            return "general"
+        return v
+
 
 # ---------------------------------------------------------------------------
-# Response
+# Response models
 # ---------------------------------------------------------------------------
 
 class SourceItem(BaseModel):
@@ -27,9 +59,11 @@ class SourceItem(BaseModel):
     url: str
     type: str  # "official" | "rag" | "web"
 
+
 class SafetyInfo(BaseModel):
     blocked: bool
-    reason: Optional[str]
+    reason: Optional[str] = None
+
 
 class MetaInfo(BaseModel):
     model: str
@@ -52,6 +86,9 @@ class MetaInfo(BaseModel):
     guided_flow_step: Optional[str] = None
     guided_flow_state: Dict[str, Any] = {}
     suggested_replies: List[str] = []
+    # Rate-limit / error meta (used by error handlers)
+    rate_limited: bool = False
+
 
 class ChatResponse(BaseModel):
     answer: str

@@ -12,5 +12,7 @@ class Settings:
     ENABLE_GOOGLE_SEARCH_GROUNDING: bool = os.getenv("ENABLE_GOOGLE_SEARCH_GROUNDING", "false").lower() == "true"
     NODE_ENV: str = os.getenv("NODE_ENV", "development")
     APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Kolkata")
+    CHAT_RATE_LIMIT: str = os.getenv("CHAT_RATE_LIMIT", "30/minute")
+    RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
 
 settings = Settings()
