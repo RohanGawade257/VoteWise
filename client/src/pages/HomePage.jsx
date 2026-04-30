@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Calendar, Map, Users, ShieldQuestion, MessageSquare, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import QuickActionCard from '../components/QuickActionCard';
 import SectionHeader from '../components/SectionHeader';
 import AssetImage from '../components/AssetImage';
@@ -38,9 +39,9 @@ const HomePage = () => {
               <a href="#explore" className="inline-flex items-center justify-center bg-gradient-to-r from-secondary to-[#3b82f6] hover:from-[#3b82f6] hover:to-secondary text-surface font-bold text-lg py-4 px-8 rounded-xl transition-all shadow-[0_8px_30px_rgb(37,99,235,0.3)] hover:shadow-[0_8px_30px_rgb(37,99,235,0.5)] hover:-translate-y-1">
                 Explore Topics <ArrowRight className="ml-2" size={20} />
               </a>
-              <a href="/first-time-voter" className="inline-flex items-center justify-center bg-surface/10 hover:bg-surface/20 backdrop-blur-md border border-surface/30 text-surface font-bold text-lg py-4 px-8 rounded-xl transition-all hover:-translate-y-1">
+              <Link to="/first-time-voter" className="inline-flex items-center justify-center bg-surface/10 hover:bg-surface/20 backdrop-blur-md border border-surface/30 text-surface font-bold text-lg py-4 px-8 rounded-xl transition-all hover:-translate-y-1 shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)]">
                 First-Time Voter?
-              </a>
+              </Link>
             </div>
           </div>
           <div className="w-full md:w-[40%] flex justify-center relative animate-in fade-in zoom-in-95 duration-1000 delay-300">
@@ -148,9 +149,9 @@ const HomePage = () => {
                 </div>
               </div>
               
-              <a href="/chat" className="inline-flex items-center justify-center bg-primary hover:bg-[#152e4d] text-surface font-bold text-lg py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
+              <Link to="/chat" className="inline-flex items-center justify-center bg-primary hover:bg-[#152e4d] text-surface font-bold text-lg py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
                 Ask the Assistant <ArrowRight className="ml-2" size={20} />
-              </a>
+              </Link>
             </div>
             
             <div className="order-1 lg:order-2 flex justify-center lg:justify-end relative">

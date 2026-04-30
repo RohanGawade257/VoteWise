@@ -22,3 +22,387 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+
+/* =============================================================================
+   MessageMeta — answer-provenance badges, confidence label, source drawer
+   ============================================================================= */
+
+.msg-meta-root {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.msg-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Shared badge shell */
+.msg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1.6;
+  user-select: none;
+}
+
+.badge-direct   { background:#EFF6FF; color:#1D4ED8; border-color:#BFDBFE; }
+.badge-ai       { background:#F5F3FF; color:#6D28D9; border-color:#DDD6FE; }
+.badge-kb       { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }
+.badge-safety   { background:#FFFBEB; color:#92400E; border-color:#FDE68A; }
+.badge-live     { background:#ECFDF5; color:#065F46; border-color:#6EE7B7; }
+.badge-fallback { background:#FEF3C7; color:#92400E; border-color:#FCD34D; }
+.badge-scope    { background:#F1F5F9; color:#475569; border-color:#CBD5E1; }
+
+/* Confidence label */
+.conf-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.conf-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.conf-high   { background:#16A34A; }
+.conf-medium { background:#D97706; }
+.conf-low    { background:#DC2626; }
+
+/* KB expandable section */
+.kb-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.kb-toggle:hover { color: var(--color-text); }
+
+.kb-file-list {
+  list-style: none;
+  padding: 6px 8px;
+  margin: 0;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kb-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.kb-file-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  flex-shrink: 0;
+}
+
+/* External source links */
+.ext-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ext-sources-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-muted);
+}
+
+.ext-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ext-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--color-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.ext-link:hover { opacity: 0.7; }
+
+
+/* =============================================================================
+   Accessibility Widget
+   ============================================================================= */
+
+.a11y-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.a11y-trigger:hover, .a11y-trigger:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.a11y-panel {
+  position: fixed;
+  bottom: 84px;
+  right: 24px;
+  z-index: 50;
+  width: 280px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: a11y-fade-in 0.2s ease-out;
+}
+
+@keyframes a11y-fade-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.a11y-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.a11y-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-primary);
+}
+
+.a11y-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.05);
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.a11y-close:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.a11y-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.a11y-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.a11y-size-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.a11y-size-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.05);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.a11y-size-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.a11y-size-btn:not(:disabled):hover {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.a11y-size-label {
+  font-size: 12px;
+  font-weight: 600;
+  width: 44px;
+  text-align: center;
+}
+
+.a11y-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: rgba(0,0,0,0.2);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.a11y-toggle-on {
+  background: var(--color-success);
+}
+
+.a11y-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.a11y-toggle-on .a11y-toggle-knob {
+  transform: translateX(18px);
+}
+
+.a11y-reset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.a11y-reset:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--color-text);
+}
+
+/* =============================================================================
+   High Contrast Mode
+   ============================================================================= */
+
+html.high-contrast {
+  --color-primary: #000000;
+  --color-secondary: #0000EE;
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-text: #000000;
+  --color-muted: #333333;
+  --color-border: #000000;
+}
+html.high-contrast body {
+  background-color: white !important;
+  color: black !important;
+}
+html.high-contrast a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: #0000EE !important;
+}
+html.high-contrast * {
+  border-color: black !important;
+}
+
+/* =============================================================================
+   Global Polish
+   ============================================================================= */
+
+/* Better focus states */
+*:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* Smoother image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+}

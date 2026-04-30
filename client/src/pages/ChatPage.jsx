@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, ExternalLink, X } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X } from 'lucide-react';
 import SectionHeader from '../components/SectionHeader';
 import { useChat } from '../hooks/useChat';
+import MessageMeta from '../components/MessageMeta';
 
 const SUGGESTED_PROMPTS = [
   "I am 18. How do I register to vote?",
@@ -156,41 +157,13 @@ const ChatPage = () => {
                     </div>
                   </div>
 
-                  {/* Meta freshness info */}
-                  {msg.meta && (msg.meta.checkedAt || msg.meta.sourceType) && (
-                    <div className="mt-2 text-xs text-muted flex flex-col gap-0.5 w-full pl-2 border-l-2 border-border">
-                      {msg.meta.sourceType && (
-                        <span>
-                          {msg.meta.sourceType === 'official_grounding' 
-                            ? 'Verified with official sources' 
-                            : 'Live verification unavailable'}
-                        </span>
-                      )}
-                      {msg.meta.checkedAt && (
-                        <span>
-                          Checked by VoteWise: {new Date(msg.meta.checkedAt).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Sources */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-2 space-y-1 w-full">
-                      <p className="text-xs text-muted font-semibold uppercase tracking-wide">Sources</p>
-                      {msg.sources.map((src, i) => (
-                        <a
-                          key={i}
-                          href={src.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-secondary hover:opacity-80 underline underline-offset-2"
-                        >
-                          <ExternalLink size={11} />
-                          {src.title}
-                        </a>
-                      ))}
-                    </div>
+                  {/* Answer provenance badges, confidence, sources */}
+                  {msg.role === 'assistant' && (
+                    <MessageMeta
+                      meta={msg.meta}
+                      sources={msg.sources}
+                      safetyBlocked={msg.safetyBlocked}
+                    />
                   )}
                 </div>
               </div>

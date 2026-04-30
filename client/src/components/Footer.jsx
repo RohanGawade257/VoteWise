@@ -12,8 +12,13 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-8">
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center mb-6">
-              <img src={logoImg} alt="VoteWise Logo" className="h-12 w-auto filter brightness-0 invert" />
+            <div className="flex items-center mb-6 gap-3">
+              <div className="bg-white/10 p-1.5 rounded-xl backdrop-blur-sm">
+                <img src={logoImg} alt="VoteWise Logo" className="h-10 w-10 object-contain filter brightness-0 invert" />
+              </div>
+              <span className="font-extrabold text-2xl tracking-tight text-white">
+                VoteWise
+              </span>
             </div>
             <p className="text-surface/70 text-base max-w-md leading-relaxed font-light">
               A beautifully simple, neutral, and non-partisan educational platform dedicated to helping Indian citizens understand the election process and exercise their right to vote effectively.
