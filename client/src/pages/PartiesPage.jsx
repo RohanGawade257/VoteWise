@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ShieldCheck, Info, Users, X, AlertTriangle, ExternalLink } from 'lucide-react';
 import SectionHeader from '../components/SectionHeader';
 import partiesData from '../data/parties.json';
@@ -51,8 +52,8 @@ const PartyCard = ({ party, isSelected, onClick }) => {
 const PartyDetailPanel = ({ party, onClose }) => {
   if (!party) return null;
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center px-4 pb-4 pt-28 sm:pb-6 sm:pt-24 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pb-4 pt-28 sm:pb-6 sm:pt-24 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-white border border-border rounded-[2rem] w-full max-w-4xl max-h-[calc(100svh-8rem)] sm:max-h-[calc(100svh-7rem)] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
         
         {/* Header */}
@@ -138,12 +139,43 @@ const PartyDetailPanel = ({ party, onClose }) => {
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
 const PartiesPage = () => {
   const [selectedParty, setSelectedParty] = useState(null);
+
+  useEffect(() => {
+    if (!selectedParty) return undefined;
+
+    const scrollY = window.scrollY;
+    const { body, documentElement } = document;
+    const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyPaddingRight = body.style.paddingRight;
+    const previousBodyOverscroll = body.style.overscrollBehavior;
+    const previousHtmlOverflow = documentElement.style.overflow;
+    const previousHtmlOverscroll = documentElement.style.overscrollBehavior;
+
+    documentElement.style.overflow = 'hidden';
+    documentElement.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    if (scrollbarWidth > 0) {
+      body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      documentElement.style.overflow = previousHtmlOverflow;
+      documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+      body.style.overflow = previousBodyOverflow;
+      body.style.paddingRight = previousBodyPaddingRight;
+      body.style.overscrollBehavior = previousBodyOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, [selectedParty]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
