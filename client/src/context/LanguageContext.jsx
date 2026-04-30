@@ -20,9 +20,14 @@ export const LanguageProvider = ({ children }) => {
   const [currentLang, setCurrentLang] = useState('en');
 
   useEffect(() => {
-    // Check if google translate cookie exists
+    // 1. Check local storage
+    const savedLang = localStorage.getItem('votewise_language');
+    // 2. Check google translate cookie
     const match = document.cookie.match(/googtrans=\/en\/([a-z]{2})/);
-    if (match && match[1]) {
+    
+    if (savedLang) {
+      setCurrentLang(savedLang);
+    } else if (match && match[1]) {
       const found = LANGUAGES.find(l => l.code === match[1]);
       if (found) {
         setCurrentLang(found.code);
@@ -45,6 +50,10 @@ export const LanguageProvider = ({ children }) => {
 
   const changeLanguage = (langCode) => {
     setCurrentLang(langCode);
+    
+    // Save to preferences
+    localStorage.setItem('votewise_language', langCode);
+    window.dispatchEvent(new Event('votewise-preferences-updated'));
     
     // Set google translate cookie
     document.cookie = `googtrans=/en/${langCode}; path=/`;

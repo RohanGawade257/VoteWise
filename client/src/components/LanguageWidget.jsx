@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Globe, Check, Type, Minus, Plus } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { getTextSize, setTextSize } from '../utils/preferences';
 
 const FONT_SIZES = [
   { label: 'Small', scale: '14px' },
@@ -11,7 +12,7 @@ const FONT_SIZES = [
 
 export default function LanguageWidget() {
   const [open, setOpen] = useState(false);
-  const [fontIdx, setFontIdx] = useState(1); // default: Normal
+  const [fontIdx, setFontIdx] = useState(getTextSize());
   const { currentLang, changeLanguage, languages } = useLanguage();
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
@@ -44,19 +45,21 @@ export default function LanguageWidget() {
 
   // --- Hydrate Text Size ---
   useEffect(() => {
-    const saved = localStorage.getItem('a11y-font');
-    if (saved) {
-      try {
-        const fi = JSON.parse(saved);
-        if (typeof fi === 'number') setFontIdx(fi);
-      } catch { /* ignore */ }
-    }
+    // Listen for custom event from preferences modal
+    const handleStorageChange = () => {
+      setFontIdx(getTextSize());
+    };
+    window.addEventListener('votewise-preferences-updated', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('votewise-preferences-updated', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // --- Apply Text Size ---
   useEffect(() => {
-    document.documentElement.style.fontSize = FONT_SIZES[fontIdx].scale;
-    localStorage.setItem('a11y-font', JSON.stringify(fontIdx));
+    setTextSize(fontIdx);
   }, [fontIdx]);
 
   return (

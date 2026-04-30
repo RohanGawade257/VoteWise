@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X, BookOpen, Sparkles } from 'lucide-react';
 import { useChat } from '../hooks/useChat';
 import MessageMeta from '../components/MessageMeta';
+import { getAssistantTone, setAssistantTone } from '../utils/preferences';
 
 const SUGGESTED_PROMPTS = [
   "Guide me as a first-time voter",
@@ -84,7 +85,23 @@ const SuggestedReplies = ({ replies, onSelect, disabled }) => {
 // ---------------------------------------------------------------------------
 const ChatPage = () => {
   const [input, setInput] = useState('');
-  const [persona, setPersona] = useState('general');
+  const [persona, setPersonaState] = useState(getAssistantTone());
+  
+  const setPersona = (newPersona) => {
+    setPersonaState(newPersona);
+    setAssistantTone(newPersona);
+  };
+
+  useEffect(() => {
+    const handleStorageChange = () => setPersonaState(getAssistantTone());
+    window.addEventListener('votewise-preferences-updated', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('votewise-preferences-updated', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
   const { messages, isLoading, error, sendMessage, clearError } = useChat();
   const messagesEndRef = useRef(null);
 

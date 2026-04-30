@@ -5,6 +5,7 @@ import Footer from './Footer';
 import LanguageWidget from './LanguageWidget';
 import DisclaimerBanner from './DisclaimerBanner';
 import ScrollToTop from './ScrollToTop';
+import FirstTimePreferencesModal from './FirstTimePreferencesModal';
 
 const Layout = () => {
   const location = useLocation();
@@ -25,6 +26,7 @@ const Layout = () => {
         <Outlet />
       </main>
       <Footer />
+      <FirstTimePreferencesModal />
     </div>
   );
 };
