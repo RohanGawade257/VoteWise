@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, Calendar, Map, Users, ShieldQuestion, MessageSquare, ShieldCheck, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import QuickActionCard from '../components/QuickActionCard';
@@ -8,10 +7,23 @@ import AssetImage from '../components/AssetImage';
 import logoImg from '../assets/votewise-logo.svg';
 
 const HomePage = () => {
+  const handleExploreClick = (event) => {
+    event.preventDefault();
+
+    const target = document.getElementById('explore');
+    if (!target) return;
+
+    window.history.pushState(null, '', '#explore');
+    target.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  };
+
   return (
     <div className="w-full">
       {/* Modern Dark Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-24 border-b border-border">
+      <section className="relative overflow-hidden pt-16 sm:pt-20 md:pt-32 pb-12 sm:pb-16 md:pb-24 border-b border-border">
         {/* Animated Background Glows */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
           <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-secondary/10 blur-[120px] animate-pulse"></div>
@@ -24,28 +36,28 @@ const HomePage = () => {
           <img src="/images/bg-1.jpg" alt="" className="w-full h-full object-cover grayscale" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between mt-8">
-          <div className="w-full md:w-[55%] mb-12 md:mb-0">
-            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-md rounded-full px-5 py-2 mb-8 border border-border shadow-[0_0_15px_rgba(59,130,246,0.1)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between mt-0 md:mt-8">
+          <div className="w-full md:w-[55%]">
+            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-md rounded-full px-4 sm:px-5 py-2 mb-5 md:mb-8 border border-border shadow-[0_0_15px_rgba(59,130,246,0.1)] animate-in fade-in slide-in-from-bottom-4 duration-700">
               <ShieldCheck size={18} className="text-secondary" />
               <span className="text-sm font-semibold tracking-wide text-primary">100% Neutral & Non-Partisan</span>
             </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-5 md:mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
               Empowering Voters Through <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-[#4F46E5]">Knowledge</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted max-w-xl mb-10 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+            <p className="text-base sm:text-lg md:text-xl text-muted max-w-xl mb-6 md:mb-10 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
               VoteWise is your beautifully simple, comprehensive guide to understanding the Indian electoral process. Be informed. Be prepared. Vote wise.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
-              <a href="#explore" className="inline-flex items-center justify-center bg-secondary hover:bg-[#2563EB] text-white font-bold text-lg py-4 px-8 rounded-2xl transition-all shadow-[0_8px_30px_rgb(59,130,246,0.3)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.5)] hover:-translate-y-1 border border-secondary/50">
+              <a href="#explore" onClick={handleExploreClick} className="inline-flex w-full sm:w-auto items-center justify-center bg-secondary hover:bg-[#2563EB] text-white font-bold text-base sm:text-lg py-3.5 sm:py-4 px-8 rounded-2xl transition-all shadow-[0_8px_30px_rgb(59,130,246,0.3)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.5)] hover:-translate-y-1 border border-secondary/50">
                 Explore Topics <ArrowRight className="ml-2" size={20} />
               </a>
-              <Link to="/first-time-voter" className="inline-flex items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-border text-primary font-bold text-lg py-4 px-8 rounded-2xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1">
+              <Link to="/first-time-voter" className="inline-flex w-full sm:w-auto items-center justify-center bg-white/80 hover:bg-white backdrop-blur-md border border-border text-primary font-bold text-base sm:text-lg py-3.5 sm:py-4 px-8 rounded-2xl transition-all shadow-sm hover:shadow-md hover:-translate-y-1">
                 First-Time Voter?
               </Link>
             </div>
           </div>
-          <div className="w-full md:w-[40%] flex justify-center relative animate-in fade-in zoom-in-95 duration-1000 delay-300">
+          <div className="hidden md:flex w-full md:w-[40%] justify-center relative animate-in fade-in zoom-in-95 duration-1000 delay-300">
             {/* Glowing effect behind logo */}
             <div className="absolute inset-0 bg-secondary/20 rounded-full blur-[80px] -z-10 animate-pulse"></div>
             <div className="bg-white/80 backdrop-blur-2xl border border-border rounded-[3rem] p-10 shadow-xl">
@@ -60,7 +72,7 @@ const HomePage = () => {
       </section>
 
       {/* Main Content Areas */}
-      <section id="explore" className="py-20 relative z-20 overflow-hidden">
+      <section id="explore" className="scroll-mt-28 py-20 relative z-20 overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-[0.04] mix-blend-multiply pointer-events-none">
           <img src="/images/bg-2.jpg" alt="" className="w-full h-full object-cover grayscale" />
         </div>
@@ -133,7 +145,7 @@ const HomePage = () => {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1">
+            <div className="order-1">
               <span className="text-secondary font-bold tracking-wider uppercase text-sm mb-3 block">AI-Powered</span>
               <h2 className="text-4xl md:text-5xl font-extrabold text-primary mb-6 leading-tight">Have specific <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-[#4F46E5]">questions?</span></h2>
               <p className="text-muted mb-8 text-lg md:text-xl leading-relaxed font-light">
@@ -151,14 +163,22 @@ const HomePage = () => {
                 </div>
               </div>
               
-              <Link to="/chat" className="inline-flex items-center justify-center bg-primary text-white hover:bg-primary/90 font-bold text-lg py-4 px-8 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
-                Ask the Assistant <ArrowRight className="ml-2" size={20} />
+              <Link
+                to="/chat"
+                className="home-assistant-cta group inline-flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-2xl border border-secondary/30 bg-gradient-to-r from-primary to-slate-800 px-8 py-4 text-base sm:text-lg font-bold text-white transition-all duration-300 hover:-translate-y-1 hover:from-primary hover:to-secondary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/25 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98]"
+              >
+                <span className="relative z-10">Ask the Assistant</span>
+                <ArrowRight className="relative z-10 ml-2 transition-transform duration-300 group-hover:translate-x-1" size={20} />
               </Link>
             </div>
             
-            <div className="order-1 lg:order-2 flex justify-center lg:justify-end relative">
+            <div className="order-2 hidden sm:flex justify-center lg:justify-end relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-secondary/10 to-[#4F46E5]/10 rounded-[3rem] rotate-3 scale-105 blur-2xl z-0"></div>
-              <div className="bg-white/90 backdrop-blur-xl border border-border rounded-[2.5rem] p-8 shadow-xl relative z-10 w-full max-w-md">
+              <Link
+                to="/chat"
+                aria-label="Open VoteWise Assistant"
+                className="group bg-white/90 backdrop-blur-xl border border-border rounded-[2.5rem] p-8 shadow-xl relative z-10 w-full max-w-md cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-secondary/30 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/25 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.99]"
+              >
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
                     <MessageSquare className="text-secondary" size={24} />
@@ -176,7 +196,11 @@ const HomePage = () => {
                     You can register to vote up to the last date of filing nominations by candidates in your constituency. However, it's best to register well in advance...
                   </div>
                 </div>
-              </div>
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-4 text-sm font-semibold text-secondary">
+                  <span>Click to ask a question</span>
+                  <ArrowRight className="transition-transform duration-300 group-hover:translate-x-1" size={18} />
+                </div>
+              </Link>
             </div>
           </div>
         </div>

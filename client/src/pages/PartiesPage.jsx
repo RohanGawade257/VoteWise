@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, Info, Users, X, AlertTriangle, ExternalLink } from 'lucide-react';
 import SectionHeader from '../components/SectionHeader';
 import partiesData from '../data/parties.json';
@@ -52,8 +52,8 @@ const PartyDetailPanel = ({ party, onClose }) => {
   if (!party) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white border border-border rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+    <div className="fixed inset-0 z-[90] flex items-start justify-center px-4 pb-4 pt-28 sm:pb-6 sm:pt-24 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white border border-border rounded-[2rem] w-full max-w-4xl max-h-[calc(100svh-8rem)] sm:max-h-[calc(100svh-7rem)] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
         
         {/* Header */}
         <div className="bg-slate-50 border-b border-border p-6 sm:p-8 flex justify-between items-start z-10 shrink-0">
