@@ -43,6 +43,17 @@ export const useChat = () => {
     state: {},
   });
 
+  // Conversation context state — tracks topic across turns
+  const conversationContextRef = useRef({
+    active: false,
+    flow_type: null,
+    last_topic: null,
+    last_action: null,
+    last_path_steps: [],
+    current_step_index: null,
+    awaiting_user_choice: false,
+  });
+
   // Ref-based guard: prevents duplicate in-flight requests regardless of render cycles
   const inFlightRef = useRef(false);
 
@@ -81,6 +92,8 @@ export const useChat = () => {
           state: guidedFlowRef.current.state,
         };
 
+        const conversationContextPayload = conversationContextRef.current;
+
         response = await fetch(`${API_BASE}/chat`, {
           method: 'POST',
           headers: {
@@ -92,6 +105,7 @@ export const useChat = () => {
             persona,
             context,
             guidedFlow: guidedFlowPayload,
+            conversationContext: conversationContextPayload,
           }),
         });
       } catch {
@@ -120,6 +134,27 @@ export const useChat = () => {
         // Flow completed or fell through — reset
         guidedFlowRef.current = { active: false, step: null, state: {} };
         if (import.meta.env.DEV) console.log('[useChat] Guided flow COMPLETED — resetting');
+      }
+
+      // Update conversation context
+      if (meta.context_reset) {
+        conversationContextRef.current = {
+          active: false,
+          flow_type: null,
+          last_topic: null,
+          last_action: null,
+          last_path_steps: [],
+          current_step_index: null,
+          awaiting_user_choice: false,
+        };
+        if (import.meta.env.DEV) console.log('[useChat] Conversation context RESET');
+      } else if (meta.conversation_context_active && meta.conversation_context) {
+        conversationContextRef.current = {
+          ...conversationContextRef.current,
+          ...meta.conversation_context,
+          active: true,
+        };
+        if (import.meta.env.DEV) console.log(`[useChat] Conversation context updated | last_topic=${meta.last_topic}`);
       }
 
       setMessages(prev => [

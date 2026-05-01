@@ -51,44 +51,6 @@ _NO_RE = re.compile(
     re.IGNORECASE
 )
 
-# ---------------------------------------------------------------------------
-# Follow-up Intent Detection (Phase 2)
-# ---------------------------------------------------------------------------
-
-_FOLLOWUP_PATTERNS = {
-    "accepted_id": [
-        r"what\s*id\s*(do|should)\s*i\s*carry", r"which\s*id", r"documents\s*to\s*carry",
-        r"id\s*proof", r"what\s*proof", r"what\s*card\s*should\s*i\s*take", r"accepted\s*id"
-    ],
-    "epic_explanation": [
-        r"what\s*is\s*epic", r"what\s*is\s*(a\s*)?voter\s*id", r"epic\s*means"
-    ],
-    "voter_list_check": [
-        r"how\s*to\s*check\s*(my\s*)?name", r"where\s*to\s*check\s*name", r"voter\s*list"
-    ],
-    "polling_booth": [
-        r"find\s*(my\s*)?booth", r"where\s*to\s*vote", r"polling\s*station", r"where\s*is\s*my\s*booth"
-    ],
-    "form6_explanation": [
-        r"what\s*is\s*form\s*6", r"how\s*to\s*register", r"new\s*voter\s*form", r"explain\s*form\s*6"
-    ],
-    "polling_day": [
-        r"what\s*happens\s*on\s*polling\s*day", r"polling\s*day", r"how\s*do\s*i\s*vote\s*on\s*polling\s*day"
-    ],
-    "evm_vvpat": [
-        r"explain\s*evm", r"what\s*is\s*evm", r"vvpat", r"how\s*to\s*use\s*evm"
-    ],
-    "explain_step": [
-        r"explain\s*step\s*(\d+)", r"what\s*is\s*step\s*(\d+)", r"tell\s*me\s*(more\s*)?about\s*step\s*(\d+)", r"step\s*(\d+)"
-    ]
-}
-
-_FOLLOWUP_RE = {
-    intent: [re.compile(p, re.IGNORECASE) for p in patterns]
-    for intent, patterns in _FOLLOWUP_PATTERNS.items()
-}
-
-
 
 # ---------------------------------------------------------------------------
 # Step definitions — each step knows what it asks and what comes next
@@ -153,106 +115,7 @@ def detect_guided_flow_trigger(message: str) -> bool:
     return any(r.search(message) for r in _TRIGGER_RE)
 
 
-def detect_contextual_followup(message: str, state: dict) -> str | None:
-    """
-    Detect if the message is a short follow-up to the current guided flow state.
-    Returns the intent string (e.g., 'accepted_id') or None.
-    """
-    # Check if the state has active path context
-    if not state.get("flow_type"):
-        return None
 
-    msg_lower = message.lower().strip()
-    
-    # 1. Check exact step matches
-    for pattern in _FOLLOWUP_RE["explain_step"]:
-        match = pattern.search(msg_lower)
-        if match:
-            step_num = match.group(1)
-            return f"explain_step_{step_num}"
-
-    # 2. Check general follow-up intents
-    for intent, patterns in _FOLLOWUP_RE.items():
-        if intent == "explain_step": continue
-        if any(p.search(msg_lower) for p in patterns):
-            return intent
-
-    return None
-
-def handle_contextual_followup(intent: str, state: dict, persona: str) -> dict | None:
-    """
-    Return the response dict for a contextual followup.
-    """
-    # ── Map step explanation to actual topics ──
-    if intent.startswith("explain_step_"):
-        step_num_str = intent.split("_")[-1]
-        try:
-            step_idx = int(step_num_str) - 1
-            steps = state.get("last_path_steps", [])
-            if 0 <= step_idx < len(steps):
-                step_id = steps[step_idx]["id"]
-                # Remap the intent to the step's actual topic
-                intent_map = {
-                    "check_eligibility": "eligibility_explanation",
-                    "upload_docs": "docs_explanation",
-                    "track_app": "tracking_explanation",
-                    "verify_details": "voter_list_check",
-                    "check_name": "voter_list_check",
-                    "register_form6": "form6_explanation",
-                    "find_booth": "polling_booth",
-                    "carry_id": "accepted_id",
-                    "vote": "polling_day"
-                }
-                intent = intent_map.get(step_id, intent)
-        except ValueError:
-            pass
-
-    # ── Responses ──
-    resp = None
-    if intent == "eligibility_explanation":
-        ans = apply_tone_to_template("followup_eligibility", persona)
-        resp = _reply(ans, "followup_eligibility", state, get_persona_suggested_replies(persona, "eligibility_followups"))
-        
-    elif intent == "docs_explanation":
-        ans = apply_tone_to_template("followup_docs", persona)
-        resp = _reply(ans, "followup_docs", state, get_persona_suggested_replies(persona, "docs_followups"))
-        
-    elif intent == "tracking_explanation":
-        ans = apply_tone_to_template("followup_tracking", persona)
-        resp = _reply(ans, "followup_tracking", state, get_persona_suggested_replies(persona, "tracking_followups"))
-
-    elif intent == "accepted_id":
-        ans = apply_tone_to_template("followup_accepted_id", persona)
-        resp = _reply(ans, "followup_accepted_id", state, get_persona_suggested_replies(persona, "accepted_id_followups"))
-
-    elif intent == "voter_list_check":
-        ans = apply_tone_to_template("followup_voter_list", persona)
-        resp = _reply(ans, "followup_voter_list", state, get_persona_suggested_replies(persona, "voter_list_followups"))
-
-    elif intent == "form6_explanation":
-        ans = apply_tone_to_template("followup_form6", persona)
-        resp = _reply(ans, "followup_form6", state, get_persona_suggested_replies(persona, "form6_followups"))
-
-    elif intent == "epic_explanation":
-        ans = apply_tone_to_template("followup_epic", persona)
-        resp = _reply(ans, "followup_epic", state, get_persona_suggested_replies(persona, "epic_followups"))
-
-    elif intent == "polling_booth":
-        ans = apply_tone_to_template("followup_booth", persona)
-        resp = _reply(ans, "followup_booth", state, get_persona_suggested_replies(persona, "booth_followups"))
-
-    elif intent == "polling_day":
-        ans = apply_tone_to_template("followup_polling_day", persona)
-        resp = _reply(ans, "followup_polling_day", state, get_persona_suggested_replies(persona, "polling_day_followups"))
-        
-    elif intent == "evm_vvpat":
-        ans = apply_tone_to_template("followup_evm", persona)
-        resp = _reply(ans, "followup_evm", state, get_persona_suggested_replies(persona, "evm_followups"))
-
-    if resp:
-        resp["contextual_followup_intent"] = intent
-
-    return resp
 
 
 def start_guided_flow(persona: str) -> dict:
@@ -338,7 +201,9 @@ def update_guided_flow(message: str, current_step: str, state: dict, persona: st
 
     # ── Step 3: ask_has_epic ─────────────────────────────────────────────────
     if current_step == "ask_has_epic":
-        if _YES_RE.match(message) or "yes" in msg_lower or "have" in msg_lower or "voter id" in msg_lower:
+        # Check negatives first so "don't have" / "no I don't have" routes correctly
+        _has_negation = any(neg in msg_lower for neg in ("don't have", "dont have", "no i don't", "do not have", "nahi", "no voter", "no id"))
+        if _YES_RE.match(message) or ("yes" in msg_lower and not _has_negation) or ("have" in msg_lower and not _has_negation) or "voter id" in msg_lower and not _has_negation:
             new_state["hasEpic"] = "yes"
             return _has_epic_path(new_state, persona)
 
@@ -362,15 +227,8 @@ def update_guided_flow(message: str, current_step: str, state: dict, persona: st
                         "followup_form6", "followup_epic", "followup_booth",
                         "followup_polling_day", "followup_evm",
                         "followup_eligibility", "followup_docs", "followup_tracking"):
-        # User replied to a terminal step
-        # Phase 1/2: check for contextual followup FIRST
-        followup_intent = detect_contextual_followup(message, new_state)
-        if followup_intent:
-            resp = handle_contextual_followup(followup_intent, new_state, persona)
-            if resp:
-                return resp
-        
-        # If no contextual followup matched, hand off to normal RAG/Gemini
+        # User replied to a terminal step. It has completed the GF lifecycle.
+        # Fall through to Conversation Context / RAG
         return {"flow_complete": True, "guided_flow_state": new_state}
 
     # ── Unknown step fallback ────────────────────────────────────────────────

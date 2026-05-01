@@ -11,6 +11,16 @@ class GuidedFlowInput(BaseModel):
     step: Optional[str] = None        # current step name e.g. "ask_age_status"
     state: Dict[str, Any] = {}        # collected answers so far
 
+class ConversationContextInput(BaseModel):
+    """Context tracking across turns."""
+    active: bool = False
+    flow_type: Optional[str] = None
+    last_topic: Optional[str] = None
+    last_action: Optional[str] = None
+    last_path_steps: List[Dict[str, Any]] = []
+    current_step_index: Optional[int] = None
+    awaiting_user_choice: bool = False
+
 
 class ChatRequest(BaseModel):
     """
@@ -27,6 +37,7 @@ class ChatRequest(BaseModel):
     context: Optional[str] = Field(default=None, max_length=1000)
     use_current_info: bool = False
     guidedFlow: Optional[GuidedFlowInput] = None
+    conversationContext: Optional[ConversationContextInput] = None
 
     @field_validator("message")
     @classmethod
@@ -86,6 +97,15 @@ class MetaInfo(BaseModel):
     guided_flow_step: Optional[str] = None
     guided_flow_state: Dict[str, Any] = {}
     suggested_replies: List[str] = []
+    
+    # Conversation context meta
+    conversation_context_active: bool = False
+    last_topic: Optional[str] = None
+    last_action: Optional[str] = None
+    followup_intent: Optional[str] = None
+    context_reset: bool = False
+    conversation_context: Dict[str, Any] = {}
+    
     # Rate-limit / error meta (used by error handlers)
     rate_limited: bool = False
 

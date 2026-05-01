@@ -86,6 +86,17 @@ def _build_guided_response(result: dict, persona: str) -> ChatResponse:
         )
     )
 
+def _apply_cc_to_response(resp: ChatResponse, cc_state: dict, context_reset: bool = False) -> ChatResponse:
+    """Helper to append conversationContext state to responses."""
+    if context_reset:
+        resp.meta.context_reset = True
+        resp.meta.conversation_context_active = False
+    elif cc_state and cc_state.get("active"):
+        resp.meta.conversation_context_active = True
+        resp.meta.conversation_context = cc_state
+        resp.meta.last_topic = cc_state.get("last_topic")
+    return resp
+
 
 # ---------------------------------------------------------------------------
 # Intent detection helpers for fallback answer quality
@@ -341,31 +352,66 @@ async def chat(request: Request, body: ChatRequest):
     logger.info(f"[{server_req_id}] Safety check PASSED")
 
     # ── 1.5. Guided flow — runs BEFORE RAG / Gemini ─────────────────────────
-    # Completely optional: if guidedFlow is absent the block is skipped.
     gf_input: GuidedFlowInput | None = body.guidedFlow
+    cc_input = body.conversationContext
+    cc_state = cc_input.model_dump() if cc_input else {}
 
-    if gf_input is not None:
-        gf_active  = gf_input.active
-        gf_step    = gf_input.step
-        gf_state   = dict(gf_input.state or {})
+    # Determine if GF is currently active (frontend must send guidedFlow.active=true)
+    gf_active = gf_input.active if gf_input is not None else False
+    gf_step   = gf_input.step   if gf_input is not None else None
+    gf_state  = dict(gf_input.state or {}) if gf_input is not None else {}
 
-        # Case A: flow is already active — advance it
-        if gf_active and gf_step:
-            result = guided_flow_service.update_guided_flow(
-                body.message, gf_step, gf_state, persona
+    # Case A: flow is already active — advance it
+    if gf_active and gf_step:
+        result = guided_flow_service.update_guided_flow(
+            body.message, gf_step, gf_state, persona
+        )
+        if not result.get("flow_complete", False):
+            logger.info(f"[{server_req_id}] Guided flow ADVANCED | step={result.get('guided_flow_step')}")
+            return _apply_cc_to_response(_build_guided_response(result, persona), cc_state)
+
+        # flow_complete=True → fall through to normal RAG/Gemini
+        logger.info(f"[{server_req_id}] Guided flow COMPLETE — handing off to normal pipeline")
+        from app.services import conversation_context_service
+        cc_state = conversation_context_service.update_context_from_guided_flow({
+            "guided_flow_state": gf_state,
+            "guided_flow_step": gf_step
+        })
+
+    # Case B: flow not active — check if this message should TRIGGER it
+    elif not gf_active:
+        if guided_flow_service.detect_guided_flow_trigger(body.message):
+            result = guided_flow_service.start_guided_flow(persona)
+            logger.info(f"[{server_req_id}] Guided flow TRIGGERED | persona={persona}")
+            # Starting a guided flow RESETS the conversation context
+            return _apply_cc_to_response(_build_guided_response(result, persona), cc_state, context_reset=True)
+
+    # ── 1.6. Conversation Context Follow-up ──────────────────────────────────
+    from app.services import conversation_context_service
+    if cc_state and cc_state.get("active"):
+        followup_resp = conversation_context_service.handle_followup(body.message, cc_state, persona)
+        if followup_resp:
+            logger.info(f"[{server_req_id}] Contextual Follow-up MATCHED | intent={followup_resp.get('followup_intent')}")
+            cc_state["last_topic"] = followup_resp.get("last_topic")
+            return ChatResponse(
+                answer=followup_resp["answer"],
+                sources=[],
+                safety=SafetyInfo(blocked=False, reason=None),
+                meta=MetaInfo(
+                    model="conversation-context",
+                    used_rag=False,
+                    used_search_grounding=False,
+                    intent="contextual_followup",
+                    contextual_followup_intent=followup_resp["followup_intent"],
+                    used_direct_answer=True,
+                    used_model=False,
+                    persona_used=persona,
+                    conversation_context_active=True,
+                    last_topic=cc_state["last_topic"],
+                    conversation_context=cc_state,
+                    suggested_replies=followup_resp.get("suggested_replies", [])
+                )
             )
-            if not result.get("flow_complete", False):
-                logger.info(f"[{server_req_id}] Guided flow ADVANCED | step={result.get('guided_flow_step')}")
-                return _build_guided_response(result, persona)
-            # flow_complete=True → fall through to normal RAG/Gemini
-            logger.info(f"[{server_req_id}] Guided flow COMPLETE — handing off to normal pipeline")
-
-        # Case B: flow not active yet — check if this message should trigger it
-        elif not gf_active:
-            if guided_flow_service.detect_guided_flow_trigger(body.message):
-                result = guided_flow_service.start_guided_flow(persona)
-                logger.info(f"[{server_req_id}] Guided flow TRIGGERED | persona={persona}")
-                return _build_guided_response(result, persona)
 
     # ── 2. Intent classification ─────────────────────────────────────────────
     intent_result = classify_intent(body.message, context=body.context, persona=persona)
@@ -409,7 +455,7 @@ async def chat(request: Request, body: ChatRequest):
         logger.debug(f"[DBG][{server_req_id}] skipped fallback because grounding enabled=False")
         logger.debug(f"[DBG][{server_req_id}] gemini_service called=False")
 
-        return ChatResponse(
+        return _apply_cc_to_response(ChatResponse(
             answer=direct_response,
             sources=[],
             safety=SafetyInfo(blocked=False, reason=None),
@@ -424,7 +470,7 @@ async def chat(request: Request, body: ChatRequest):
                 checkedAt=checked_at,
                 sourceType=source_type
             )
-        )
+        ), cc_state)
     elif direct_response is not None and skip_direct:
         logger.info(f"[{server_req_id}] Skipping direct fallback because grounding is ENABLED | intent={intent}")
         logger.debug(f"[DBG][{server_req_id}] skipped fallback because grounding enabled=True")
@@ -468,6 +514,9 @@ async def chat(request: Request, body: ChatRequest):
         # Override model name if grounding was used
         if response.meta.used_search_grounding:
             response.meta.model = "gemini-grounded"
+            
+        # Add CC if active
+        response = _apply_cc_to_response(response, cc_state)
 
         return response
 
@@ -520,7 +569,7 @@ async def chat(request: Request, body: ChatRequest):
                 f"| intent={intent} | reason={fallback_reason} | durationMs={elapsed}"
             )
             logger.debug(f"[DBG][{server_req_id}] final sourceType=unverified_fallback (gemini failed)")
-            return ChatResponse(
+            return _apply_cc_to_response(ChatResponse(
                 answer=safe_fallback_text,
                 # sources=[] for unverified_fallback: no source has been validated.
                 # ECI is NOT the correct source for general public office queries (current PM, CM, etc).
@@ -538,7 +587,7 @@ async def chat(request: Request, body: ChatRequest):
                     checkedAt=checked_at,
                     sourceType="unverified_fallback"
                 )
-            )
+            ), cc_state)
 
         # Standard RAG fallback for civic/static questions
         logger.warning(
@@ -548,7 +597,7 @@ async def chat(request: Request, body: ChatRequest):
         fallback = _build_rag_fallback(body.message, body.persona, fallback_reason)
         fallback.meta.intent = intent
         fallback.meta.persona_used = persona
-        return fallback
+        return _apply_cc_to_response(fallback, cc_state)
 
     except Exception as e:
         # Catch-all: unexpected errors — log full trace server-side, send safe JSON
