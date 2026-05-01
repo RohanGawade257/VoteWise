@@ -33,7 +33,7 @@ Get your key at: https://aistudio.google.com/app/apikey
 ### 4. Start backend
 ```bash
 # From server/ directory:
-venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+BLO
 ```
 
 ### 5. Start frontend (in a separate terminal)

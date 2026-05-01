@@ -14,6 +14,7 @@ import FirstTimeVoterPage from './pages/FirstTimeVoterPage';
 import PartiesPage from './pages/PartiesPage';
 import BasicsPage from './pages/BasicsPage';
 import FAQPage from './pages/FAQPage';
+import LocalHelpPage from './pages/LocalHelpPage';
 import SourcesPage from './pages/SourcesPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -30,6 +31,7 @@ function App() {
             <Route path="first-time-voter" element={<FirstTimeVoterPage />} />
             <Route path="parties" element={<PartiesPage />} />
             <Route path="basics" element={<BasicsPage />} />
+            <Route path="local-help" element={<LocalHelpPage />} />
             <Route path="faq" element={<FAQPage />} />
             <Route path="sources" element={<SourcesPage />} />
             {/* Catch-all: any unknown route shows the 404 page */}

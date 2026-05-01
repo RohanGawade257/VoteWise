@@ -5,6 +5,7 @@ export const PREF_KEYS = {
   TEXT_SIZE: 'a11y-font', // Reusing existing key from LanguageWidget
   LANGUAGE: 'votewise_language',
   TONE: 'votewise_assistant_tone',
+  STATE: 'votewise_user_state',
 };
 
 // Check if setup is completed
@@ -58,5 +59,15 @@ export const getAssistantTone = () => {
 
 export const setAssistantTone = (tone) => {
   localStorage.setItem(PREF_KEYS.TONE, tone);
+  window.dispatchEvent(new Event('votewise-preferences-updated'));
+};
+
+// User State
+export const getUserState = () => {
+  return localStorage.getItem(PREF_KEYS.STATE) || '';
+};
+
+export const setUserState = (stateName) => {
+  localStorage.setItem(PREF_KEYS.STATE, stateName);
   window.dispatchEvent(new Event('votewise-preferences-updated'));
 };

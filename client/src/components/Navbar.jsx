@@ -24,6 +24,7 @@ const Navbar = () => {
     { name: 'First-Time Voters', path: '/first-time-voter' },
     { name: 'Parties', path: '/parties' },
     { name: 'Basics', path: '/basics' },
+    { name: 'Local Help', path: '/local-help' },
     { name: 'Ask Assistant', path: '/chat' },
   ];
 

@@ -9,8 +9,12 @@ import {
   getLanguage, 
   setLanguage,
   getAssistantTone,
-  setAssistantTone
+  setAssistantTone,
+  getUserState,
+  setUserState
 } from '../utils/preferences';
+import { statesData } from '../data/stateElectionResources';
+import { MapPin } from 'lucide-react';
 
 const TONES = [
   { id: 'general', label: 'General' },
@@ -34,6 +38,7 @@ export default function FirstTimePreferencesModal() {
   const [selectedSize, setSelectedSize] = useState(1);
   const [selectedLang, setSelectedLang] = useState('en');
   const [selectedTone, setSelectedTone] = useState('general');
+  const [selectedState, setSelectedState] = useState('');
   
   const modalRef = useRef(null);
 
@@ -44,6 +49,7 @@ export default function FirstTimePreferencesModal() {
       setSelectedSize(getTextSize() > 2 ? 1 : getTextSize()); // max large for simple UI
       setSelectedLang(getLanguage() || currentLang || 'en');
       setSelectedTone(getAssistantTone() || 'general');
+      setSelectedState(getUserState() || '');
       
       // Small delay for smooth entrance
       const timer = setTimeout(() => setIsOpen(true), 500);
@@ -82,6 +88,7 @@ export default function FirstTimePreferencesModal() {
     setTextSize(selectedSize);
     setLanguage(selectedLang);
     setAssistantTone(selectedTone);
+    setUserState(selectedState);
     markPreferencesCompleted();
     
     setIsOpen(false);
@@ -96,6 +103,7 @@ export default function FirstTimePreferencesModal() {
     setTextSize(1);
     setLanguage('en');
     setAssistantTone('general');
+    setUserState('');
     markPreferencesCompleted();
     
     setIsOpen(false);
@@ -193,6 +201,31 @@ export default function FirstTimePreferencesModal() {
                     {tone.label}
                   </button>
                 ))}
+              </div>
+            </section>
+            {/* 4. State Selection */}
+            <section aria-labelledby="section-state">
+              <h3 id="section-state" className="font-bold text-slate-800 flex items-center gap-2 mb-3">
+                <MapPin size={18} className="text-secondary" />
+                Select Your State
+              </h3>
+              <div className="relative">
+                <input 
+                  list="indian-states"
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                  placeholder="Type to search your state (Optional)"
+                  className="w-full appearance-none bg-slate-50 border-2 border-slate-200 text-slate-800 py-3 px-4 rounded-xl font-medium focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary"
+                  aria-label="Select Your State"
+                />
+                <datalist id="indian-states">
+                  {statesData.map(state => (
+                    <option key={state.name} value={state.name} />
+                  ))}
+                </datalist>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
               </div>
             </section>
           </div>
