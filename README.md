@@ -1,318 +1,191 @@
 # VoteWise
 
-> **A neutral, AI-powered civic education assistant for Indian voters.**
-
----
+VoteWise is a neutral civic education assistant that helps Indian citizens understand voter registration, election timelines, polling-day steps, and democracy basics through guided flows and AI assistance.
 
 ## Chosen Vertical
-**Civic Tech / Social Impact — First-Time Voter Assistance & Electoral Education**
-
----
+Civic Education / First-Time Voter Assistance
 
 ## Problem Statement
-
-Many Indian citizens — especially first-time voters, students, and elderly citizens — struggle to find clear, trustworthy, non-partisan information about voter registration, election timelines, and polling day procedures. Official sources are dense and scattered. Media sources are often politically biased.
-
-VoteWise closes this gap: a single, safe, guided experience to understand Indian democracy.
-
----
+Many Indian citizens, especially first-time voters, struggle to understand voter registration, election timelines, polling-day requirements, and basic civic concepts. Existing information is often scattered across official portals, PDFs, and long documents.
 
 ## Solution
-
-VoteWise is a lightweight, mobile-first, strictly non-partisan web application that provides:
-
-- **Step-by-step guided voter journeys** for first-time voters
-- **AI civic assistant** (Gemini-powered) that answers questions in plain language
-- **RAG knowledge fallback** — works even when Gemini is unavailable
-- **Safety guardrails** that block partisan requests and illegal-activity queries
-- **Context-aware follow-ups** — the assistant understands conversation context
-- **Persona modes** — answers adapt for General, First-Time Voter, School Student, and Elderly users
-- **Official-source reminders** for live/current election data
-
----
+VoteWise provides a simple, neutral, guided assistant that explains the Indian election process through:
+- guided first-time voter flow
+- election timeline
+- election process map
+- AI-powered chat
+- RAG-backed fallback knowledge base
+- contextual follow-up handling
+- persona-based explanation modes
 
 ## Key Features
-
-| Feature | Description |
-|---|---|
-| AI Chat Assistant | Gemini-powered civic Q&A with RAG fallback |
-| Guided First-Time Voter Flow | Step-by-step registration & polling day journey |
-| Election Timeline | Phase-by-phase election date breakdown |
-| Election Process Map | 12-step interactive electoral lifecycle |
-| Political Parties Directory | Strictly neutral, factual party information |
-| Politics Basics | Simple explainers for civic concepts |
-| FAQ | Common voter questions answered |
-| Official Sources | Verified links to ECI and government portals |
-| Persona Modes | General · First-Time Voter · School Student · Elderly |
-| Safety Guardrails | Blocks partisan persuasion and illegal activity requests |
-| Accessibility Controls | Text size, language widget, reduced-motion support |
-| Custom 404 Page | On-brand, helpful not-found page |
-| Responsive UI | Mobile-first, tested from 320px to 1440px |
-| First-Time Preferences Modal | Language, text size, tone saved to localStorage |
-
----
+- Guided first-time voter assistant
+- Context-aware follow-up answers
+- Election timeline
+- Election process map
+- First-time voter guide
+- Political basics
+- National parties directory
+- Local help / BLO-related guidance
+- Gemini-powered assistant
+- RAG fallback from local VoteWise knowledge base
+- Persona modes:
+  - General
+  - First-Time Voter
+  - School Student
+  - Elderly
+- Safety guardrails:
+  - no party recommendations
+  - no propaganda
+  - no illegal voting help
+  - official-source redirects
+- Accessibility:
+  - text size
+  - high contrast
+  - keyboard-friendly controls
+- Responsive UI
+- Custom 404 page
+- Rate limiting and input validation
 
 ## Google Services Used
-
-- **Google Gemini API** — Powers the VoteWise AI Assistant (`gemini-2.5-flash-lite`)
-  - Civic question answering
-  - Persona-aware tone generation
-  - Optional Google Search Grounding for live election data (when `ENABLE_GOOGLE_SEARCH_GROUNDING=true`)
-- **Google Fonts** — `Outfit` and `Inter` loaded via CSS import
-
-> **Note:** Google Translate integration uses the browser-based Google Translate widget (free, cookie-based). It is NOT a paid Google Cloud Translation API integration.
-
----
+- Gemini API — AI-powered civic explanations
+- Google Cloud Run — deployment target
 
 ## Architecture
+**Frontend:**
+- React
+- Vite
+- Tailwind/CSS
+- React Router
 
-```
-User (Browser)
-  └─ React 19 SPA (Vite)
-       ├─ 9 content pages + custom 404
-       ├─ useChat hook → POST /api/chat
-       ├─ LanguageContext (Google Translate widget)
-       └─ preferences.js (localStorage: text size, language, tone)
-
-FastAPI Backend (Python 3.11)
-  └─ POST /api/chat
-       ├─ SlowAPI rate limiter (30 req/min/IP)
-       ├─ Pydantic v2 validation (1500 char max, persona normalization)
-       ├─ safety_service — regex pre-screen (blocks partisan/illegal)
-       ├─ guided_flow_service — state-machine voter journey
-       ├─ source_router — lightweight intent classifier
-       ├─ rag_service — keyword-scored retrieval (6 MD files, ~61 chunks)
-       ├─ gemini_service — async Gemini API call
-       │    └─ On failure → RAG fallback or safe live-intent text
-       └─ tone_service — persona-aware response rendering
-
-Static Serving
-  └─ FastAPI serves client/dist/ in production (single Docker container)
-```
-
----
+**Backend:**
+- FastAPI
+- Gemini service
+- RAG service
+- Guided flow service
+- Tone service
+- Safety service
+- Conversation context service
+- SlowAPI rate limiter
+- Pydantic validation
 
 ## Folder Structure
-
-```
+```text
 VoteWise/
-├── client/                    # React frontend (Vite)
-│   └── src/
-│       ├── pages/             # 10 route pages incl. NotFoundPage
-│       ├── components/        # Navbar, Footer, Layout, LanguageWidget, etc.
-│       ├── hooks/useChat.js   # Core chat state + API integration
-│       ├── context/           # LanguageContext (Google Translate)
-│       ├── utils/preferences.js  # localStorage preference management
-│       └── data/              # Static JSON: parties, guideSteps, timeline
-├── server/                    # FastAPI backend (Python)
-│   ├── app/
-│   │   ├── main.py            # App, middleware, exception handlers
-│   │   ├── models.py          # Pydantic request/response models
-│   │   ├── config.py          # Settings from environment
-│   │   ├── routes/            # /api/chat, /api/health
-│   │   ├── services/          # gemini, rag, guided_flow, safety, tone, source_router
-│   │   └── knowledge/         # 6 markdown civic knowledge files
-│   ├── scripts/               # test_api_security.py
-│   ├── requirements.txt
-│   └── .env.example
-├── Dockerfile                 # Multi-stage: Node build → Python serve
-├── DEPLOYMENT.md              # Cloud Run deployment guide
-└── README_BACKEND.md          # Detailed backend API reference
+├── client/              # React frontend
+│   ├── public/          # Static assets
+│   └── src/             # React source (components, hooks, pages)
+└── server/              # FastAPI backend
+    ├── app/             # Application code (routes, services, models)
+    ├── scripts/         # Testing and utility scripts
+    └── requirements.txt # Python dependencies
 ```
 
----
+## How It Works
+1. User asks question or starts guided flow.
+2. Safety filter runs first.
+3. Guided/context flow checks whether it is a voter journey follow-up.
+4. RAG retrieves relevant civic knowledge when needed.
+5. Gemini generates answer when available.
+6. If Gemini fails, local RAG fallback answers safely.
+7. Current/dynamic election data redirects to official ECI sources.
 
 ## Setup Instructions
 
 ### Prerequisites
+- Node.js
 - Python 3.11+
-- Node.js 20+
-- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+- Gemini API key
+- Google Cloud SDK (optional for deployment)
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/YOUR_USERNAME/VoteWise.git
-cd VoteWise
-```
-
-### 2. Backend Setup
-```bash
-cd server
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Mac/Linux
-source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-Copy `.env.example` to `.env` and fill in your API key:
-```bash
-cp .env.example .env
-```
-
-### 3. Frontend Setup
-```bash
-cd ../client
-npm install
-```
-
-### 4. Run Locally (two terminals)
-
-**Terminal 1 — Backend:**
-```bash
-cd server
-venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-```
-
-**Terminal 2 — Frontend:**
+### Frontend
 ```bash
 cd client
+npm install
 npm run dev
 ```
 
-Open: **http://localhost:5173**
-
----
-
-## Environment Variables
-
-Create `server/.env` from `server/.env.example`:
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `GEMINI_API_KEY` | ✅ Yes | — | Google Gemini API key (never commit!) |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash-lite` | Gemini model name |
-| `PORT` | No | `8080` | Backend server port |
-| `ALLOWED_ORIGIN` | No | `http://localhost:5173` | CORS allowed origin |
-| `ENABLE_GOOGLE_SEARCH_GROUNDING` | No | `false` | Enable live Gemini grounding |
-| `CHAT_RATE_LIMIT` | No | `30/minute` | Rate limit for `/api/chat` |
-| `RATE_LIMIT_ENABLED` | No | `true` | Toggle rate limiting |
-
-> ⚠️ **Never commit `.env` files.** They are in `.gitignore`.
-
----
-
-## Security
-
-| Layer | Implementation |
-|---|---|
-| API Key Protection | Loaded server-side from `.env` only. Never in frontend code. |
-| Rate Limiting | SlowAPI — 30 requests/minute/IP on `/api/chat`. Returns clean JSON 429. |
-| Input Validation | Pydantic v2 — message max 1500 chars, non-empty, persona normalized |
-| Safety Filters | Regex pre-screen runs **before** any Gemini API call |
-| Error Handling | All paths return JSON. No stack traces or API key hints exposed. |
-| CORS | Configured for `ALLOWED_ORIGIN` only. `allow_credentials=False`. |
-| No PII | No personal data collected. No database. `localStorage` only. |
-
----
-
-## Testing
-
-### Manual Chat QA Checklist
-
-| Test | Expected |
-|---|---|
-| `hi` | Friendly greeting, no civic content needed |
-| `what is your name` | VoteWise identity response |
-| `what is today's date` | IST date/time from server |
-| `Guide me as a first-time voter` | Guided flow starts |
-| `I am 18 and want to vote` | Guided flow triggers |
-| `I already have voter ID` | Guided flow advances |
-| `What ID do I carry?` | Contextual follow-up answered (accepted IDs) |
-| `What is Form 6?` | RAG-backed answer |
-| `What is EVM and VVPAT?` | RAG-backed answer |
-| `What is NOTA?` | RAG-backed answer |
-| `latest election schedule` | Redirect to eci.gov.in |
-| `Which party should I vote for?` | ❌ Safety blocked |
-| `How can I make fake voter ID?` | ❌ Safety blocked |
-| `What is Python?` | Out-of-scope, gentle redirect |
-| Empty message | HTTP 422 / UI error |
-| 1600-char message | HTTP 422 |
-
-### Automated Security Tests
+### Backend
 ```bash
 cd server
-python scripts/test_api_security.py
+python -m venv venv
+venv\Scripts\activate   # On Mac/Linux: source venv/bin/activate
+pip install -r requirements.txt
+copy .env.example .env  # On Mac/Linux: cp .env.example .env
+# add GEMINI_API_KEY to .env
+uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
-### Route QA Checklist
-
-| Route | Expected |
-|---|---|
-| `/` | Home page loads, hero visible |
-| `/chat` | Chat UI loads, welcome message visible |
-| `/timeline` | Timeline page loads |
-| `/first-time-voter` | 7-step checklist visible |
-| `/parties` | Party directory loads |
-| `/basics` | Politics basics loads |
-| `/faq` | FAQ page loads |
-| `/sources` | Official sources loads |
-| `/process` | Process map loads |
-| `/random-page` | ✅ VoteWise 404 page (not backend JSON) |
-| Refresh any route | ✅ SPA loads correctly |
-
-### API Tests
+### Production Build
 ```bash
-# Health check
-curl http://localhost:8080/api/health
-
-# Valid request
-curl -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message":"What is NOTA?","persona":"general"}'
-
-# Rate limit test (PowerShell)
-1..35 | ForEach-Object {
-  $b = @{ message = "How do I vote?"; persona = "general" } | ConvertTo-Json
-  $r = Invoke-WebRequest -Uri "http://localhost:8080/api/chat" -Method POST -ContentType "application/json" -Body $b -ErrorAction SilentlyContinue
-  Write-Host "Request $_ → $($r.StatusCode)"
-}
+cd client
+npm run build
 ```
 
----
+## Environment Variables
+- `GEMINI_API_KEY`: API key for Google Gemini model.
+- `GEMINI_MODEL`: Model version to use (e.g., `gemini-2.5-flash-lite`).
+- `PORT`: Port for FastAPI backend.
+- `ALLOWED_ORIGIN`: CORS allowed origin.
+- `ENABLE_GOOGLE_SEARCH_GROUNDING`: Whether to use Google Search grounding.
+- `APP_TIMEZONE`: Timezone for temporal intent classification.
+- `CHAT_RATE_LIMIT`: SlowAPI rate limit for chat API.
+- `RATE_LIMIT_ENABLED`: Global rate limiting switch.
 
-## Deployment
+## API Endpoints
+- `GET /api/health`: Health check endpoint.
+- `POST /api/chat`: Chat interaction endpoint.
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for Google Cloud Run deployment instructions.
+## Testing Checklist
+- Home loads
+- All routes load
+- 404 route works
+- Chat works
+- Guided first-time voter flow works
+- Context follow-up works:
+  - What is Form 6?
+  - What should I do next?
+  - What ID do I carry?
+  - What is BLO?
+- Safety blocks:
+  - Which party should I vote for?
+  - How to make fake voter ID?
+- Input validation:
+  - empty message
+  - long message
+- Rate limiting
+- Mobile responsive at 320px/375px/768px/1366px
+- Accessibility controls
+- No console errors
 
-### Quick Docker Build
-```bash
-docker build -t votewise .
-docker run -p 8080:8080 -e GEMINI_API_KEY=your_key votewise
-```
-
----
-
-## Limitations
-
-- **Educational only** — VoteWise is not an official ECI service
-- **Cannot verify voter status** — Use [voters.eci.gov.in](https://voters.eci.gov.in) directly
-- **Live data** — Current election dates/results must be verified at official ECI sources
-- **No endorsement** — VoteWise does not endorse or oppose any political party
-- **Chat not persisted** — Conversations reset on page reload (no database by design)
-- **Language translation** — Uses browser Google Translate widget; translations are best-effort
-
----
+## Security
+- API key stored in env only
+- `.env` ignored
+- rate limiting
+- input validation
+- safe error responses
+- no sensitive personal data collection
+- safety filter before Gemini
 
 ## Official Sources
+- https://eci.gov.in
+- https://voters.eci.gov.in
+- https://electoralsearch.eci.gov.in
+- official party websites only for party directory
 
-- [eci.gov.in](https://eci.gov.in) — Election Commission of India
-- [voters.eci.gov.in](https://voters.eci.gov.in) — Voter registration and services
-- [electoralsearch.eci.gov.in](https://electoralsearch.eci.gov.in) — Electoral roll search
-- [results.eci.gov.in](https://results.eci.gov.in) — Election results
+## Limitations
+- educational only
+- not official ECI service
+- cannot verify actual voter registration
+- cannot provide legal guarantees
+- current dates/deadlines must be verified from official sources
+- does not endorse or oppose parties
 
----
+## Deployment
+See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Live Demo
-[PLACEHOLDER_LIVE_URL]
+Coming soon.
 
 ## GitHub Repository
-[PLACEHOLDER_GITHUB_URL]
-
----
-
-*VoteWise is an independent, non-partisan civic education project. All information should be verified at the official [Election Commission of India website](https://eci.gov.in).*
+[Insert Repo URL Here]

@@ -72,6 +72,14 @@ India holds elections for Parliament (Lok Sabha), State Assemblies (Vidhan Sabha
 - If no single party has majority, coalition negotiations happen
 - The Prime Minister is appointed and then Cabinet is formed
 
+## Booth Level Officer (BLO)
+- BLO full form: Booth Level Officer
+- Associated with polling station/part area
+- Helps with electoral roll/voter list related work
+- Helps verify elector/probable elector details
+- Helps route additions, deletions, and corrections to election authorities
+- Voters should verify official services through voters.eci.gov.in, eci.gov.in, or state CEO office
+
 ## Key Sources
 - Election Commission of India: https://eci.gov.in
 - Voter Registration: https://voters.eci.gov.in

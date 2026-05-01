@@ -1,50 +1,65 @@
-# VoteWise Deployment Guide
+# Deployment Guide — VoteWise
 
-This guide details how to deploy VoteWise using Google Cloud Run. 
-Our repository includes a multi-stage `Dockerfile` which perfectly packages the React frontend and Node.js backend into a single, highly performant container.
+## Option 1: Local Production Test
 
-## Prerequisites
-1. [Google Cloud SDK (gcloud)](https://cloud.google.com/sdk/docs/install) installed locally.
-2. A Google Cloud Project with Billing enabled.
-3. Cloud Run and Cloud Build APIs enabled in your Google Cloud Project.
+**Frontend Build:**
+```bash
+cd client
+npm install
+npm run build
+```
 
-## Deployment Steps (Google Cloud Run)
+**Backend Start:**
+```bash
+cd server
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+```
+Then open `http://localhost:8080`.
 
-### 1. Authenticate with Google Cloud
-Open your terminal and run:
+## Option 2: Docker
+
+**Build:**
+```bash
+docker build -t votewise .
+```
+
+**Run:**
+```bash
+docker run -p 8080:8080 --env GEMINI_API_KEY=your_key --env GEMINI_MODEL=gemini-2.5-flash-lite votewise
+```
+
+Open:
+`http://localhost:8080`
+
+## Option 3: Google Cloud Run
+
+**Prerequisites:**
+- Google Cloud SDK (`gcloud`) installed.
+- A Google Cloud Project.
+
+**Commands:**
 ```bash
 gcloud auth login
-```
-
-### 2. Set your Project ID
-Replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID:
-```bash
 gcloud config set project YOUR_PROJECT_ID
-```
-
-### 3. Build and Submit the Docker Image to Container Registry
-This command pushes your local code to Cloud Build, creates the Docker image, and stores it in your Google Container Registry.
-```bash
 gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/votewise
-```
-
-### 4. Deploy to Cloud Run
-Deploy the image to Cloud Run. Make sure to replace `YOUR_KEY` with your actual Gemini API key.
-```bash
 gcloud run deploy votewise \
   --image gcr.io/YOUR_PROJECT_ID/votewise \
   --platform managed \
   --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars NODE_ENV=production,GEMINI_API_KEY=YOUR_KEY
+  --set-env-vars GEMINI_MODEL=gemini-2.5-flash-lite,PORT=8080,RATE_LIMIT_ENABLED=true,CHAT_RATE_LIMIT=30/minute,ENABLE_GOOGLE_SEARCH_GROUNDING=false
 ```
 
-> **Security Note:** Passing secrets via `--set-env-vars` works but is visible in the Cloud Console logs. For absolute security, it is highly recommended to use **Google Cloud Secret Manager** instead.
-> 
-> *Safer option:* 
-> Store your key in Secret Manager as `GEMINI_API_KEY`.
-> Then deploy using:
-> `--set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest`
+**Important Security Note:**
+Do not put your real `GEMINI_API_KEY` directly in the command if avoidable. Instead:
+- Set `GEMINI_API_KEY` securely through the Cloud Run console under the Environment Variables section.
+- Or use Google Cloud Secret Manager.
 
-## 5. View your Application
-After the deployment finishes, the terminal will output a URL (e.g., `https://votewise-xxxxxx-as.a.run.app`). Click the link to view your live application!
+## Post-deployment checks
+- `GET /api/health`
+- `POST /api/chat`
+- `/random-page` (should show frontend 404 page)
+- Guided flow verification
+- Safety refusal check
+- Mobile view responsive test

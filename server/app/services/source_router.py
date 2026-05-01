@@ -113,7 +113,9 @@ _CIVIC_KEYWORDS = [
     "senior citizen voter", "form 6", "form 7", "form 8",
     "voter helpline", "1950", "voters.eci.gov.in",
     "how to vote", "how do i vote", "voting process", "voting age",
-    "election process", "democracy", "eci",
+    "election process", "democracy", "eci", "blo", "booth level officer", 
+    "booth-level officer", "booth officer", "local booth officer", 
+    "polling booth officer"
 ]
 
 # 5. Voter registration — high-confidence registration queries (direct answer, no RAG noise)
@@ -165,6 +167,22 @@ _POLLING_DAY_PATTERNS = [
     r"\bvoting\s*(process|procedure|step|day)\b",
 ]
 _POLLING_DAY_RE = [re.compile(p, re.IGNORECASE) for p in _POLLING_DAY_PATTERNS]
+
+# 13b. BLO Explanation
+_BLO_PATTERNS = [
+    r"\b(what\s*is|who\s*is|explain|tell\s*me\s*about|about|describe)\s*(a\s*)?blo\b",
+    r"\bblo\s*(meaning|full\s*form|stands\s*for)\b",
+    r"\bbooth\s*(level\s*)?officer(\s*meaning)?\b",
+]
+_BLO_RE = [re.compile(p, re.IGNORECASE) for p in _BLO_PATTERNS]
+
+# 13c. Vote Privacy / Independence
+_VOTE_PRIVACY_PATTERNS = [
+    r"\b(can|will|should)\s*(the\s*|a\s*)?(blo|booth\s*level\s*officer|officer|official)\s*(tell|ask|force|influence)\s*(me\s*)?(who|whom)\s*(to\s*)?vote\b",
+    r"\b(should|do)\s*i\s*(have\s*to\s*)?(tell|reveal|show)\s*(my\s*)?vote\s*(to\s*)?(the\s*|a\s*)?(blo|officer|official)\b",
+    r"\bcan\s*(blo|officer)\s*(force|influence)\s*(me|voter)\b",
+]
+_VOTE_PRIVACY_RE = [re.compile(p, re.IGNORECASE) for p in _VOTE_PRIVACY_PATTERNS]
 
 # 14. Voter list / electoral roll check (generic info)
 _VOTER_LIST_PATTERNS = [
@@ -286,6 +304,20 @@ POLLING_DAY_RESPONSE = (
     "8. **Check the VVPAT slip** — it appears behind a glass window for 7 seconds, showing your choice.\n"
     "9. **Leave the polling station peacefully** after voting.\n\n"
     "For official guidelines: [eci.gov.in](https://eci.gov.in)"
+)
+
+BLO_RESPONSE = (
+    "BLO stands for Booth Level Officer. A BLO is a local election official linked to a polling station area. "
+    "They help with voter list/electoral roll work, such as verifying voter details, helping with corrections, "
+    "and guiding voters to the right official forms or election office. A BLO does not decide whom you vote for "
+    "and should not ask you to reveal your vote. For official voter services, verify from voters.eci.gov.in or "
+    "your state CEO/ECI source."
+)
+
+VOTE_PRIVACY_RESPONSE = (
+    "No one should influence or force your vote. Your vote is private. "
+    "BLO/election officials assist with voter-list/election process work, not vote choice. "
+    "Report problems through official ECI/state election channels."
 )
 
 VOTER_LIST_RESPONSE = (
@@ -443,6 +475,12 @@ def _persona_intro(intent: str, persona: str) -> str:
         "voter_list_check": {
             "first-time-voter": "Before polling day, check that your name is in the voter list. Here's how:\n\n",
             "elderly":          "Here is how to check if your name is on the voter list:\n\n",
+            "general":          "",
+        },
+        "blo_explanation": {
+            "first-time-voter": "If you are registering or checking voter-list details, the BLO may help guide you:\n\n",
+            "student":          "Think of a BLO like the local helper for a polling booth area:\n\n",
+            "elderly":          "They help voters with voter-list work near your polling area:\n\n",
             "general":          "",
         },
     }
@@ -661,6 +699,28 @@ def classify_intent(message: str, context: str | None = None, persona: str = "ge
             return {
                 "intent": "voter_list_check",
                 "direct_response": _persona_intro("voter_list_check", persona) + VOTER_LIST_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 14b. BLO Explanation ---
+    for pat in _BLO_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: blo_explanation | persona={persona} | msg='{cleaned[:40]}'")
+            return {
+                "intent": "blo_explanation",
+                "direct_response": _persona_intro("blo_explanation", persona) + BLO_RESPONSE,
+                "use_rag": False,
+                "use_model": False,
+            }
+
+    # --- 14c. Vote Privacy ---
+    for pat in _VOTE_PRIVACY_RE:
+        if pat.search(lower):
+            logger.info(f"Intent: vote_privacy | persona={persona} | msg='{cleaned[:40]}'")
+            return {
+                "intent": "vote_privacy",
+                "direct_response": VOTE_PRIVACY_RESPONSE,
                 "use_rag": False,
                 "use_model": False,
             }

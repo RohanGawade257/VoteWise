@@ -41,6 +41,8 @@ _CIVIC_SCOPE_WORDS = {
     "candidate", "booth", "counting", "result", "coalition", "mcc",
     "lok sabha", "vidhan sabha", "rajya sabha", "form 6", "epic",
     "chief minister", "prime minister", "governor", "opposition",
+    "blo", "booth level officer", "booth-level officer", "booth officer",
+    "local booth officer", "polling booth officer", "id",
 }
 
 # Loaded at startup — list of (chunk_text, filename, heading)

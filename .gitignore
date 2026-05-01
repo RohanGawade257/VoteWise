@@ -1,45 +1,68 @@
-# Node / frontend
+# Dependencies
 node_modules/
-dist/
-build/
-.cache/
+client/node_modules/
+server/node_modules/
 
-# Environment secrets — NEVER commit
+# Build output
+dist/
+client/dist/
+build/
+client/build/
+server/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+server/venv/
+server/.venv/
+
+# Env / secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+client/.env.local
+server/.env
+server/.env.*
+!server/.env.example
 
 # Logs
 *.log
+logs/
+server/logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS artifacts
+# OS / editor
 .DS_Store
 Thumbs.db
-
-# Python
-__pycache__/
-**/__pycache__/
-*.pyc
-*.pyo
-*.pyd
-server/venv/
-server/.venv/
-venv/
-.venv/
-.pytest_cache/
-*.egg-info/
-
-# Build artifacts
-client/dist/
-server/dist/
-
-# IDE
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
+
+# Cache
+.cache/
+.parcel-cache/
+.next/
+.turbo/
+
+# Test/build artifacts
+coverage/
+htmlcov/
+
+# Media / bulky local files
+screenshots/
+recordings/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.rar
+*.7z

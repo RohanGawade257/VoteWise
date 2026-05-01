@@ -34,8 +34,10 @@ BLOCK_PATTERNS = [
     r"manipulate.*evm",
     r"hack.*evm",
     r"tamper.*evm",
-    r"impersonat.*(election|officer|official|voter)",
+    r"impersonat.*(election|officer|official|voter|blo)",
     r"pretend.*election official",
+    r"bribe.*(blo|officer|official|election)",
+    r"fake.*voter\s*list",
     # Hate speech
     r"(hate|kill|destroy|eliminate).*(party|politician|voter|community|religion|caste|hindu|muslim|christian|dalit|brahmin)",
 ]
@@ -54,7 +56,7 @@ def check_message(message: str, persona: str = "general") -> dict:
     for pattern in COMPILED_PATTERNS:
         if pattern.search(message):
             logger.warning(f"Safety block triggered | pattern='{pattern.pattern[:40]}...' | persona={persona}")
-            is_illegal = bool(re.search(r"(fake|hack|tamper|multiple|impersonat)", pattern.pattern, re.IGNORECASE))
+            is_illegal = bool(re.search(r"(fake|hack|tamper|multiple|impersonat|bribe)", pattern.pattern, re.IGNORECASE))
             template_name = "safety_illegal" if is_illegal else "safety_political"
             refusal = apply_tone_to_template(template_name, persona)
             return {
