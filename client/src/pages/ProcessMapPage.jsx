@@ -84,9 +84,11 @@ const NodeDetailPanel = ({ node, onClose }) => {
           <span className="flex items-center">
             Source: {node.source}
           </span>
-          <a href="#" className="flex items-center text-secondary hover:underline">
-            Official Details <ExternalLink size={12} className="ml-1" />
-          </a>
+          {node.officialUrl && (
+            <a href={node.officialUrl} target="_blank" rel="noopener noreferrer" className="flex items-center text-secondary hover:underline">
+              Official Details <ExternalLink size={12} className="ml-1" />
+            </a>
+          )}
         </div>
       </div>
     </div>
@@ -150,6 +152,17 @@ const ProcessMapPage = () => {
                         <div className="bg-primary/5 rounded-lg p-3">
                           <h4 className="font-semibold text-primary mb-1 text-xs">🔰 Beginner Note:</h4>
                           <p className="text-muted text-xs italic">{node.beginnerNote}</p>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-secondary/10 flex justify-between items-center text-xs text-muted">
+                          <span className="flex items-center">
+                            Source: {node.source}
+                          </span>
+                          {node.officialUrl && (
+                            <a href={node.officialUrl} target="_blank" rel="noopener noreferrer" className="flex items-center text-secondary hover:underline">
+                              Official Details <ExternalLink size={12} className="ml-1" />
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>

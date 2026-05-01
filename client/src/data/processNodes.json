@@ -6,7 +6,8 @@
     "whyItMatters": "It ensures that only legal citizens who have reached adulthood participate in deciding the country's future.",
     "whatVoterShouldKnow": "You must be an Indian citizen, 18 years or older on the qualifying date, and an ordinary resident of your polling area.",
     "beginnerNote": "Just turning 18 is not enough. You must also formally apply to get your name on the voter list.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/faq/en/how-to-register"
   },
   {
     "id": 2,
@@ -15,7 +16,8 @@
     "whyItMatters": "Without registration, you cannot vote even if you meet all eligibility criteria.",
     "whatVoterShouldKnow": "Form 6 is used for new voter registration. It can be filled online or offline.",
     "beginnerNote": "Keep your age and address proof ready when applying.",
-    "source": "Voters' Services Portal"
+    "source": "Voters' Services Portal",
+    "officialUrl": "https://voters.eci.gov.in/form6"
   },
   {
     "id": 3,
@@ -24,7 +26,8 @@
     "whyItMatters": "If your name is not on this list on election day, you will not be allowed to vote.",
     "whatVoterShouldKnow": "Always verify your name on the list a few weeks before the election, even if you have a Voter ID.",
     "beginnerNote": "Your Voter ID card (EPIC) is just an ID. The Voter List is the ultimate proof of your right to vote in that election.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://electoralsearch.eci.gov.in/"
   },
   {
     "id": 4,
@@ -33,7 +36,8 @@
     "whyItMatters": "It sets the entire election machinery into motion and enforces the Model Code of Conduct.",
     "whatVoterShouldKnow": "The announcement includes dates for nomination, voting, and counting.",
     "beginnerNote": "Once dates are announced, the government cannot launch new schemes that might influence voters.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/issue-details-page/press-releases"
   },
   {
     "id": 5,
@@ -42,7 +46,8 @@
     "whyItMatters": "It prevents the ruling party from misusing official machinery and ensures a level playing field.",
     "whatVoterShouldKnow": "Citizens can report violations using the cVIGIL app.",
     "beginnerNote": "It is essentially a rulebook for politicians to play fair during the election season.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/mcc"
   },
   {
     "id": 6,
@@ -51,7 +56,8 @@
     "whyItMatters": "It finalizes the list of people you can actually vote for.",
     "whatVoterShouldKnow": "Candidates must disclose their assets, criminal records, and educational qualifications.",
     "beginnerNote": "You have the right to know the background of every candidate in your area before you vote.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/candidate-nomination"
   },
   {
     "id": 7,
@@ -60,7 +66,8 @@
     "whyItMatters": "It helps voters understand the promises, policies, and vision of different parties.",
     "whatVoterShouldKnow": "Campaigning strictly stops 48 hours before polling begins.",
     "beginnerNote": "Listen to all sides, but make your own independent decision.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/mcc"
   },
   {
     "id": 8,
@@ -69,7 +76,8 @@
     "whyItMatters": "This is the core event of democracy where citizens exercise their power.",
     "whatVoterShouldKnow": "Mobile phones are not allowed inside the voting compartment.",
     "beginnerNote": "Polling day is usually declared a paid holiday for workers so everyone gets a chance to vote.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://voters.eci.gov.in/"
   },
   {
     "id": 9,
@@ -78,7 +86,8 @@
     "whyItMatters": "It ensures voting is fast, secret, and accurate.",
     "whatVoterShouldKnow": "EVM is the button machine. VVPAT is the glass window that shows a printed slip of your vote for 7 seconds.",
     "beginnerNote": "Look at the VVPAT window to visually confirm your vote went to the right candidate.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://www.eci.gov.in/evm-vvpat"
   },
   {
     "id": 10,
@@ -87,7 +96,8 @@
     "whyItMatters": "It determines the exact number of votes each candidate received.",
     "whatVoterShouldKnow": "Counting is done under strict security and video surveillance in front of candidate representatives.",
     "beginnerNote": "The machines are sealed and kept in strong rooms until counting day.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://results.eci.gov.in/"
   },
   {
     "id": 11,
@@ -96,7 +106,8 @@
     "whyItMatters": "It formally finalizes the new representatives for the upcoming term.",
     "whatVoterShouldKnow": "The candidate with the most votes wins, even if they don't have an absolute majority.",
     "beginnerNote": "You can watch live, official results on the ECI Results portal.",
-    "source": "Election Commission of India"
+    "source": "Election Commission of India",
+    "officialUrl": "https://results.eci.gov.in/"
   },
   {
     "id": 12,
@@ -105,6 +116,7 @@
     "whyItMatters": "This determines who will run the country or state for the next term.",
     "whatVoterShouldKnow": "At the national level, 272 seats are needed for a majority in the Lok Sabha.",
     "beginnerNote": "Even if your candidate didn't win, the winning candidate is now responsible for representing everyone in your area.",
-    "source": "Constitution of India"
+    "source": "Constitution of India",
+    "officialUrl": "https://www.india.gov.in/my-government/constitution-of-india"
   }
 ]
