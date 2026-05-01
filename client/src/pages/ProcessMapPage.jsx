@@ -7,6 +7,8 @@ const ProcessNode = ({ node, index, isSelected, onClick }) => {
   return (
     <button
       onClick={() => onClick(node)}
+      aria-expanded={isSelected}
+      aria-controls={`step-details-${node.id}`}
       className={`relative w-full text-left p-4 rounded-xl border-2 transition-all duration-300 ${
         isSelected 
           ? 'border-secondary bg-secondary/10 shadow-md' 
@@ -26,7 +28,7 @@ const ProcessNode = ({ node, index, isSelected, onClick }) => {
       
       {/* Desktop connector line (hidden on mobile) */}
       {index < 11 && (
-        <div className="hidden md:block absolute -right-6 top-1/2 w-6 border-t-2 border-dashed border-border" />
+        <div className="hidden sm:block absolute -right-6 top-1/2 w-6 border-t-2 border-dashed border-border" />
       )}
     </button>
   );
@@ -114,11 +116,48 @@ const ProcessMapPage = () => {
                     node={node} 
                     index={index}
                     isSelected={selectedNode?.id === node.id}
-                    onClick={setSelectedNode}
+                    onClick={(n) => setSelectedNode(selectedNode?.id === n.id ? null : n)}
                   />
+                  
+                  {/* Mobile Accordion Content */}
+                  {selectedNode?.id === node.id && (
+                    <div 
+                      id={`step-details-${node.id}`}
+                      className="md:hidden mt-2 p-4 bg-surface rounded-xl border border-secondary/30 shadow-inner animate-in slide-in-from-top-2 duration-200"
+                    >
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="flex items-center font-semibold text-text mb-1 text-sm">
+                            <Info size={16} className="text-secondary mr-2" /> 
+                            Simple Explanation
+                          </h4>
+                          <p className="text-muted text-sm leading-relaxed">{node.simpleExplanation}</p>
+                        </div>
+                        
+                        <div>
+                          <h4 className="flex items-center font-semibold text-text mb-1 text-sm">
+                            <BookOpen size={16} className="text-primary mr-2" /> 
+                            Why it Matters
+                          </h4>
+                          <p className="text-muted text-sm leading-relaxed">{node.whyItMatters}</p>
+                        </div>
+                        
+                        <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+                          <h4 className="font-semibold text-warning mb-1 text-sm">What Voters Should Know:</h4>
+                          <p className="text-text text-sm">{node.whatVoterShouldKnow}</p>
+                        </div>
+                        
+                        <div className="bg-primary/5 rounded-lg p-3">
+                          <h4 className="font-semibold text-primary mb-1 text-xs">🔰 Beginner Note:</h4>
+                          <p className="text-muted text-xs italic">{node.beginnerNote}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Mobile connector line */}
                   {index < processNodes.length - 1 && (
-                    <div className="sm:hidden absolute left-8 top-full h-6 border-l-2 border-dashed border-border" />
+                    <div className={`sm:hidden absolute left-8 ${selectedNode?.id === node.id ? 'top-[4rem]' : 'top-full'} h-6 border-l-2 border-dashed border-border`} style={{ zIndex: -1 }} />
                   )}
                 </div>
               ))}
@@ -126,8 +165,8 @@ const ProcessMapPage = () => {
           </div>
         </div>
         
-        {/* Detail Panel Area */}
-        <div className="w-full md:w-1/2 lg:w-2/5">
+        {/* Detail Panel Area (Desktop Only) */}
+        <div className="hidden md:block w-full md:w-1/2 lg:w-2/5">
           <NodeDetailPanel 
             node={selectedNode} 
             onClose={() => setSelectedNode(null)} 

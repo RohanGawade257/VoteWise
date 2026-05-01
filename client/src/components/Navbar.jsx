@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/votewise-logo.svg';
+import MobilePreferencesModal from './MobilePreferencesModal';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showPrefsModal, setShowPrefsModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
@@ -77,7 +79,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu */}
-        <div className={`lg:hidden overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[400px] border-t border-border bg-white/95 backdrop-blur-2xl rounded-b-3xl' : 'max-h-0'}`}>
+        <div className={`lg:hidden overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[800px] border-t border-border bg-white/95 backdrop-blur-2xl rounded-b-3xl' : 'max-h-0'}`}>
           <div className="px-4 pt-4 pb-6 space-y-2">
             {links.map((link) => (
               <Link
@@ -93,9 +95,28 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            
+            {/* Mobile Preferences Button */}
+            <div className="pt-4 mt-2 border-t border-border">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowPrefsModal(true);
+                }}
+                className="w-full text-left px-5 py-3.5 rounded-2xl text-base font-bold text-muted hover:bg-slate-50 hover:text-primary transition-all duration-300 border border-transparent"
+              >
+                Language & Text Size
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Mobile Preferences Modal */}
+      <MobilePreferencesModal 
+        isOpen={showPrefsModal} 
+        onClose={() => setShowPrefsModal(false)} 
+      />
     </nav>
   );
 };
