@@ -3,7 +3,11 @@ import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 
 // In dev: use VITE_API_BASE_URL if set, otherwise Vite proxy handles /api → localhost:VITE_BACKEND_PORT
 // In prod: same-origin /api (no env var needed)
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+const CHAT_ENDPOINT = API_BASE_URL
+  ? `${API_BASE_URL}/api/chat`
+  : '/api/chat';
 
 const getErrorMessage = (status, fallbackMsg) => {
   switch (status) {
@@ -94,7 +98,7 @@ export const useChat = () => {
 
         const conversationContextPayload = conversationContextRef.current;
 
-        response = await fetch(`${API_BASE}/chat`, {
+        response = await fetch(CHAT_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -109,7 +113,7 @@ export const useChat = () => {
           }),
         });
       } catch {
-        throw new Error('Backend server is not running. Please ensure the server is started on port 8080.');
+        throw new Error('Chat backend is unreachable. Please try again in a moment.');
       }
 
       const data = await response.json();
