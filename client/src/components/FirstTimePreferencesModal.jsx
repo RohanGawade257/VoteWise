@@ -13,7 +13,7 @@ import {
   getUserState,
   setUserState
 } from '../utils/preferences';
-import { statesData } from '../data/stateElectionResources';
+import { stateElectionResources } from '../data/stateElectionResources';
 import { MapPin } from 'lucide-react';
 
 const TONES = [
@@ -219,7 +219,7 @@ export default function FirstTimePreferencesModal() {
                   aria-label="Select Your State"
                 />
                 <datalist id="indian-states">
-                  {statesData.map(state => (
+                  {stateElectionResources.map(state => (
                     <option key={state.name} value={state.name} />
                   ))}
                 </datalist>

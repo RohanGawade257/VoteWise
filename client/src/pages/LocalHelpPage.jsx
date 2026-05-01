@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Globe, Users, FileText, Info, Building, Map, Phone, AlertTriangle, ChevronDown } from 'lucide-react';
+import { MapPin, Globe, Users, FileText, Info, Building, Map, Phone, AlertTriangle, ChevronDown, ExternalLink } from 'lucide-react';
 import SectionHeader from '../components/SectionHeader';
 import { getUserState, setUserState } from '../utils/preferences';
-import { statesData, COMMON_ECI_LINKS } from '../data/stateElectionResources';
+import { stateElectionResources, COMMON_LINKS } from '../data/stateElectionResources';
 
 const Card = ({ title, icon: Icon, children }) => (
   <div className="clay-card p-6 h-full flex flex-col">
@@ -18,14 +18,14 @@ const Card = ({ title, icon: Icon, children }) => (
   </div>
 );
 
-const ExternalLink = ({ href, children }) => (
+const SafeLink = ({ href, children, className = "" }) => (
   <a 
     href={href} 
     target="_blank" 
     rel="noopener noreferrer"
-    className="inline-flex items-center text-secondary font-semibold hover:text-[#2563EB] hover:underline"
+    className={`inline-flex items-center text-secondary font-semibold hover:text-[#2563EB] hover:underline ${className}`}
   >
-    {children}
+    {children} <ExternalLink size={14} className="ml-1" />
   </a>
 );
 
@@ -36,7 +36,7 @@ export default function LocalHelpPage() {
 
   useEffect(() => {
     const savedState = getUserState();
-    if (savedState && statesData.some(s => s.name === savedState)) {
+    if (savedState && stateElectionResources.some(s => s.name === savedState)) {
       setSelectedState(savedState);
     } else {
       setIsEditingState(true);
@@ -50,9 +50,9 @@ export default function LocalHelpPage() {
     setStateSearch('');
   };
 
-  const currentStateData = statesData.find(s => s.name === selectedState);
+  const currentStateData = stateElectionResources.find(s => s.name === selectedState);
 
-  const filteredStates = statesData.filter(s => 
+  const filteredStates = stateElectionResources.filter(s => 
     s.name.toLowerCase().includes(stateSearch.toLowerCase())
   );
 
@@ -132,18 +132,29 @@ export default function LocalHelpPage() {
             <p>
               The Chief Electoral Officer (CEO) is responsible for conducting fair elections in your state.
             </p>
-            {currentStateData?.ceoWebsite ? (
-              <div className="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                <p className="font-semibold text-slate-800 mb-2">Official CEO Website:</p>
-                <ExternalLink href={currentStateData.ceoWebsite}>
-                  Visit {selectedState} CEO Portal
-                </ExternalLink>
+            {currentStateData?.ceoUrl ? (
+              <div className="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex flex-col gap-3">
+                <div>
+                  <p className="font-semibold text-slate-800 mb-1">Official CEO Website:</p>
+                  <SafeLink href={currentStateData.ceoUrl}>
+                    Visit {selectedState} CEO Portal
+                  </SafeLink>
+                </div>
+                {currentStateData.contactUrl && (
+                  <div className="pt-3 border-t border-blue-100/50">
+                    <SafeLink href={currentStateData.contactUrl}>
+                      Contact State Election Office
+                    </SafeLink>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="mt-4 p-4 bg-amber-50/50 rounded-xl border border-amber-100">
-                <p className="text-amber-800 text-sm">
-                  We don't have the specific URL for this state. Please visit the official ECI portal below.
+              <div className="mt-4 p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex flex-col gap-2">
+                <p className="text-amber-800 text-sm font-medium mb-1">
+                  We don't have the specific URL for this state. Please visit the official ECI portals:
                 </p>
+                <SafeLink href={COMMON_LINKS.eciVoterPortal} className="text-sm">ECI Voters Portal</SafeLink>
+                <SafeLink href={COMMON_LINKS.deoFallbackUrl} className="text-sm">ECI Officers Directory</SafeLink>
               </div>
             )}
             <p className="text-sm mt-4">
@@ -156,19 +167,19 @@ export default function LocalHelpPage() {
             <ul className="space-y-3 mt-4">
               <li className="flex items-start gap-2">
                 <div className="mt-1 w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
-                <ExternalLink href={COMMON_ECI_LINKS.registerVoter}>Register as a New Voter (Form 6)</ExternalLink>
+                <SafeLink href="https://voters.eci.gov.in/form6">Register as a New Voter (Form 6)</SafeLink>
               </li>
               <li className="flex items-start gap-2">
                 <div className="mt-1 w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
-                <ExternalLink href={COMMON_ECI_LINKS.voterSearch}>Check your name in Voter List</ExternalLink>
+                <SafeLink href="https://electoralsearch.eci.gov.in/">Check your name in Voter List</SafeLink>
               </li>
               <li className="flex items-start gap-2">
                 <div className="mt-1 w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
-                <ExternalLink href={COMMON_ECI_LINKS.knowYourPollingStation}>Find your Polling Station</ExternalLink>
+                <SafeLink href="https://electoralsearch.eci.gov.in/pollingstation">Find your Polling Station</SafeLink>
               </li>
               <li className="flex items-start gap-2">
                 <div className="mt-1 w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0" />
-                <ExternalLink href={COMMON_ECI_LINKS.downloadForms}>Download other Voter Forms</ExternalLink>
+                <SafeLink href="https://voters.eci.gov.in/downloadform">Download other Voter Forms</SafeLink>
               </li>
             </ul>
           </Card>
@@ -177,16 +188,36 @@ export default function LocalHelpPage() {
             <p>
               If you prefer offline assistance or need to resolve an issue in person, you can contact official election authorities in your district:
             </p>
-            <div className="space-y-3 mt-4">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <h4 className="font-bold text-slate-800 text-sm mb-1">Booth Level Officer (BLO)</h4>
-                <p className="text-xs text-muted">Your local representative. They can help with forms and verify your address. Find your BLO via the ECI Voter Search portal.</p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <h4 className="font-bold text-slate-800 text-sm mb-1">District Election Office</h4>
-                <p className="text-xs text-muted">Usually located at the District Magistrate / Collector's office. Visit the official CEO portal of your state to find the exact address for your district.</p>
-              </div>
+            <div className="space-y-4 mt-4">
+              <a 
+                href={currentStateData?.bloUrl || COMMON_LINKS.bloFallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-slate-50 hover:bg-white p-4 rounded-xl border border-slate-200 hover:border-secondary hover:shadow-md transition-all group"
+              >
+                <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-secondary transition-colors">Booth Level Officer (BLO)</h4>
+                <p className="text-xs text-muted mb-2">Your local representative. They can help with forms and verify your address.</p>
+                <div className="inline-flex items-center text-sm text-secondary font-semibold group-hover:text-[#2563EB]">
+                  Find / contact BLO <ExternalLink size={14} className="ml-1" />
+                </div>
+              </a>
+              
+              <a 
+                href={currentStateData?.deoUrl || COMMON_LINKS.deoFallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-slate-50 hover:bg-white p-4 rounded-xl border border-slate-200 hover:border-secondary hover:shadow-md transition-all group"
+              >
+                <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-secondary transition-colors">District Election Office</h4>
+                <p className="text-xs text-muted mb-2">Usually located at the District Magistrate / Collector's office.</p>
+                <div className="inline-flex items-center text-sm text-secondary font-semibold group-hover:text-[#2563EB]">
+                  View district election contacts <ExternalLink size={14} className="ml-1" />
+                </div>
+              </a>
             </div>
+            <p className="text-xs text-slate-500 italic mt-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              State-specific BLO/DEO pages may vary by state. If a direct list is unavailable, VoteWise links to official ECI fallback services.
+            </p>
           </Card>
 
           <Card title="Important Official Links" icon={Globe}>
@@ -194,15 +225,15 @@ export default function LocalHelpPage() {
             <div className="space-y-4 mt-4">
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Main Portal</span>
-                <ExternalLink href={COMMON_ECI_LINKS.votersPortal}>Voters' Services Portal</ExternalLink>
+                <SafeLink href={COMMON_LINKS.eciVoterPortal}>Voters' Services Portal</SafeLink>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Contact & Support</span>
-                <ExternalLink href={COMMON_ECI_LINKS.contactUs}>ECI Official Contact Page</ExternalLink>
+                <SafeLink href={COMMON_LINKS.eciContactUrl}>ECI Official Contact Page</SafeLink>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Directory</span>
-                <ExternalLink href={COMMON_ECI_LINKS.officersDirectory}>ECI Officers Directory</ExternalLink>
+                <SafeLink href={COMMON_LINKS.deoFallbackUrl}>ECI Officers Directory</SafeLink>
               </div>
             </div>
           </Card>
