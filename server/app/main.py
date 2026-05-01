@@ -143,12 +143,31 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # ---------------------------------------------------------------------------
 # CORS middleware
 # ---------------------------------------------------------------------------
+raw_origins = settings.ALLOWED_ORIGIN or ""
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in raw_origins.split(",")
+    if origin.strip()
+]
+
+default_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://vote-wise-iota.vercel.app",
+]
+
+for origin in default_origins:
+    if origin not in allowed_origins:
+        allowed_origins.append(origin)
+
+logger.info("Allowed CORS origins: %s", allowed_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.ALLOWED_ORIGIN, "http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # ---------------------------------------------------------------------------
