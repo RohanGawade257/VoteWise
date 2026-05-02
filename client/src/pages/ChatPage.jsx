@@ -4,15 +4,7 @@ import { Send, User, Bot, AlertTriangle, ShieldCheck, RefreshCw, X, BookOpen, Sp
 import { useChat } from '../hooks/useChat';
 import MessageMeta from '../components/MessageMeta';
 import { getAssistantTone, setAssistantTone } from '../utils/preferences';
-
-const SUGGESTED_PROMPTS = [
-  "Guide me as a first-time voter",
-  "I am 18 and want to vote for the first time",
-  "What is EVM and VVPAT?",
-  "What is NOTA?",
-  "How do I check my name in voter list?",
-  "What is a coalition government?",
-];
+import { SUGGESTION_REGISTRY, getInitialSuggestions } from '../data/suggestionRegistry';
 
 // ---------------------------------------------------------------------------
 // react-markdown component map — styles markdown elements inside chat bubbles
@@ -64,18 +56,24 @@ const SuggestedReplies = ({ replies, onSelect, disabled }) => {
   if (!replies || replies.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {replies.map((reply, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onSelect(reply)}
-          disabled={disabled}
-          className="flex items-center gap-1.5 bg-blue-50 border border-secondary/30 text-secondary text-sm font-medium py-1.5 px-3.5 rounded-full hover:bg-secondary hover:text-white hover:border-secondary transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Sparkles size={11} className="flex-shrink-0" />
-          {reply}
-        </button>
-      ))}
+      {replies.map((reply, i) => {
+        // Handle both string labels (old format) and objects with id/label (new format)
+        const label = typeof reply === 'string' ? reply : (reply.label || reply.id || '');
+        const id = typeof reply === 'string' ? null : (reply.id || null);
+        
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSelect(label, id)}
+            disabled={disabled}
+            className="flex items-center gap-1.5 bg-blue-50 border border-secondary/30 text-secondary text-sm font-medium py-1.5 px-3.5 rounded-full hover:bg-secondary hover:text-white hover:border-secondary transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles size={11} className="flex-shrink-0" />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 };
@@ -123,13 +121,13 @@ const ChatPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage(input, persona);
+    sendMessage(input, persona, '', null);
     setInput('');
   };
 
-  const handleSuggestedPrompt = (prompt) => {
+  const handleSuggestedPrompt = (label, suggestionId = null) => {
     if (isLoading) return;
-    sendMessage(prompt, persona);
+    sendMessage(label, persona, '', suggestionId);
   };
 
   // Guided reply chips — only shown below the LAST assistant message
@@ -274,30 +272,6 @@ const ChatPage = () => {
 
         {/* Input Area */}
         <div className="flex-shrink-0 p-3 sm:p-5 lg:p-6 bg-slate-100 backdrop-blur-xl border-t border-border">
-          {/* Static quick prompts — only before any real conversation */}
-          {messages.length <= 1 && (
-            <div className="mb-3 sm:mb-4">
-              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Quick start:</p>
-              <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
-                {SUGGESTED_PROMPTS.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSuggestedPrompt(prompt)}
-                    className={`flex-shrink-0 border text-sm py-2 px-4 rounded-full transition-all text-left shadow-sm ${
-                      idx === 0
-                        ? 'bg-secondary/10 border-secondary/40 text-secondary font-semibold hover:bg-secondary hover:text-white'
-                        : 'bg-white border-border text-muted hover:border-secondary hover:text-primary hover:bg-slate-50'
-                    }`}
-                    disabled={isLoading}
-                  >
-                    {idx === 0 && '✨ '}{prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="relative flex items-center">
             <input
               type="text"

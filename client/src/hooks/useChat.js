@@ -61,7 +61,7 @@ export const useChat = () => {
   // Ref-based guard: prevents duplicate in-flight requests regardless of render cycles
   const inFlightRef = useRef(false);
 
-  const sendMessage = async (message, persona = 'general', context = '') => {
+  const sendMessage = async (message, persona = 'general', context = '', suggestionId = null) => {
     const trimmed = message.trim();
     if (!trimmed) return;
 
@@ -108,6 +108,7 @@ export const useChat = () => {
             message: trimmed + langPrompt,
             persona,
             context,
+            suggestion_id: suggestionId,
             guidedFlow: guidedFlowPayload,
             conversationContext: conversationContextPayload,
           }),

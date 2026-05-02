@@ -36,6 +36,10 @@ class ChatRequest(BaseModel):
     persona: str = Field(default="general", description="Assistant tone preset.")
     context: Optional[str] = Field(default=None, max_length=1000)
     use_current_info: bool = False
+    suggestionId: Optional[str] = None
+    suggestion_id: Optional[str] = None
+    suggestionIntent: Optional[str] = None
+    suggestionDomain: Optional[str] = None
     guidedFlow: Optional[GuidedFlowInput] = None
     conversationContext: Optional[ConversationContextInput] = None
 
@@ -81,6 +85,7 @@ class MetaInfo(BaseModel):
     used_rag: bool
     used_search_grounding: bool
     intent: str = "unknown"
+    answer_source: str = "unknown"
     contextual_followup_intent: Optional[str] = None
     used_direct_answer: bool = False
     used_model: bool = False
@@ -96,7 +101,7 @@ class MetaInfo(BaseModel):
     guided_flow_active: bool = False
     guided_flow_step: Optional[str] = None
     guided_flow_state: Dict[str, Any] = {}
-    suggested_replies: List[str] = []
+    suggested_replies: List[Any] = []
     
     # Conversation context meta
     conversation_context_active: bool = False

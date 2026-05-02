@@ -148,7 +148,7 @@ def is_in_civic_scope(query: str) -> bool:
     return any(kw in lower for kw in _CIVIC_SCOPE_WORDS)
 
 
-def retrieve(query: str, top_k: int = _MAX_TOP_K) -> List[dict]:
+def retrieve(query: str, top_k: int = _MAX_TOP_K, intent_type: str = None) -> List[dict]:
     """
     Retrieve top-k most relevant chunks for the query.
 
@@ -164,6 +164,11 @@ def retrieve(query: str, top_k: int = _MAX_TOP_K) -> List[dict]:
 
     scored = []
     for chunk_text, filename, heading in _chunks:
+        # Enforce answer_goal: penalize procedural chunks for definitional queries
+        if intent_type == "definition":
+            if "first_time_voter.md" in filename or "step" in heading.lower() or "how to" in heading.lower():
+                continue # Skip procedural chunks for pure definitions
+                
         score = _score_chunk(chunk_text, heading, query)
         if score >= _MIN_SCORE:          # discard noise
             scored.append((score, chunk_text, filename, heading))

@@ -137,6 +137,27 @@ def start_guided_flow(persona: str) -> dict:
     }
 
 
+def start_guided_flow_known_age(persona: str, age_status: str = "already_18") -> dict:
+    """
+    Start the guided flow when the clicked suggestion already tells us the
+    user's age status. We still ask whether this is their first time voting so
+    "No, I have voted before" can correctly branch to the returning-voter path.
+    """
+    step = "ask_first_time"
+    question = GUIDED_STEPS[step]["question"](persona)
+    replies = GUIDED_STEPS[step]["replies"]
+    state = {"ageStatus": age_status}
+
+    logger.info(f"Guided flow STARTED with known age | persona={persona} | age_status={age_status}")
+
+    return {
+        "answer": question,
+        "guided_flow_step": step,
+        "guided_flow_state": state,
+        "suggested_replies": replies,
+    }
+
+
 def update_guided_flow(message: str, current_step: str, state: dict, persona: str) -> dict:
     """
     Advance the guided flow one step based on the user's reply.
@@ -152,7 +173,7 @@ def update_guided_flow(message: str, current_step: str, state: dict, persona: st
     if current_step == "ask_first_time":
         if _YES_RE.match(message) or "first" in msg_lower or "yes" in msg_lower:
             new_state["isFirstTimeVoter"] = True
-            next_step = "ask_age_status"
+            next_step = "ask_has_epic" if new_state.get("ageStatus") == "already_18" else "ask_age_status"
             q = GUIDED_STEPS[next_step]["question"](persona)
             replies = GUIDED_STEPS[next_step]["replies"]
             return _reply(q, next_step, new_state, replies)

@@ -65,7 +65,8 @@ async def generate_chat_response(
     persona: str,
     context: str | None,
     intent: str,
-    use_rag: bool = True
+    use_rag: bool = True,
+    intent_type: str | None = None
 ) -> ChatResponse:
 
     # --- 1. Check API key ---
@@ -105,7 +106,7 @@ async def generate_chat_response(
 
     if use_rag:
         rag_query = f"{context or ''} {message}".strip()
-        rag_chunks = rag_service.retrieve(rag_query, top_k=3)   # hard cap at 3
+        rag_chunks = rag_service.retrieve(rag_query, top_k=3, intent_type=intent_type)   # hard cap at 3
         rag_context_block = rag_service.format_for_prompt(rag_chunks)
         used_rag = bool(rag_chunks)
         if rag_chunks:
