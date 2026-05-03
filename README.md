@@ -18,6 +18,13 @@ VoteWise provides a simple, neutral, guided assistant that explains the Indian e
 - contextual follow-up handling
 - persona-based explanation modes
 
+## Approach and Logic
+VoteWise adopts an LLM-first intent routing architecture to provide accurate, context-aware civic guidance. Rather than relying on rigid keyword matching, the system uses an LLM classifier to determine the user's precise civic intent (e.g., definitional, procedural, or live civic). Based on this classification, the system dynamically routes the query to the most reliable response mechanism:
+- A registry of verified direct answers for precise definitions to prevent hallucination.
+- A local RAG system for retrieving static, foundational knowledge.
+- A grounded Gemini generation pipeline for nuanced, context-aware responses.
+A strict safety layer pre-screens all inputs to ensure absolute political neutrality before processing.
+
 ## Key Features
 - Guided first-time voter assistant
 - Context-aware follow-up answers
@@ -61,7 +68,10 @@ VoteWise provides a simple, neutral, guided assistant that explains the Indian e
 **Backend:**
 - FastAPI
 - Gemini service
+- LLM Classifier service
+- Direct Answer Registry
 - RAG service
+- Answer Verifier
 - Guided flow service
 - Tone service
 - Safety service
@@ -83,12 +93,13 @@ VoteWise/
 
 ## How It Works
 1. User asks question or starts guided flow.
-2. Safety filter runs first.
-3. Guided/context flow checks whether it is a voter journey follow-up.
-4. RAG retrieves relevant civic knowledge when needed.
-5. Gemini generates answer when available.
-6. If Gemini fails, local RAG fallback answers safely.
-7. Current/dynamic election data redirects to official ECI sources.
+2. Safety filter runs first to block harmful or partisan content.
+3. LLM Classifier detects the specific civic intent of the query.
+4. Direct Answer Registry handles precise definitional queries immediately to prevent hallucination.
+5. Guided/context flow checks whether it is a voter journey follow-up.
+6. RAG retrieves relevant civic knowledge for grounding.
+7. Gemini generates the final answer, utilizing grounded context and verifying the response.
+8. Current/dynamic election data redirects to official ECI sources.
 
 ## Setup Instructions
 
@@ -172,6 +183,12 @@ npm run build
 - https://voters.eci.gov.in
 - https://electoralsearch.eci.gov.in
 - official party websites only for party directory
+
+## Assumptions
+- **Geographic & Civic Scope:** The platform is specifically tailored to the Indian democratic system and electoral process.
+- **Language:** The current version assumes interactions are primarily in English.
+- **Knowledge Stability:** We assume foundational civic concepts remain static and can be reliably served via our local RAG knowledge base, while live or dynamic election data is best handled by redirecting to official ECI sources.
+- **Safety Precedence:** We assume that maintaining strict political neutrality is paramount. The system is designed to conservatively block ambiguous, highly subjective, or sensitive queries rather than risk generating biased or propagandist content.
 
 ## Limitations
 - educational only
