@@ -110,7 +110,7 @@ VoteWise/
 - Node.js
 - Python 3.11+
 - Gemini API key
-- Google Cloud SDK (optional for deployment)
+- Google Translator 
 
 ### Frontend
 ```bash
