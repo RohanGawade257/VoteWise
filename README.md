@@ -56,7 +56,10 @@ A strict safety layer pre-screens all inputs to ensure absolute political neutra
 
 ## Google Services Used
 - Gemini API — AI-powered civic explanations
-- Google Cloud Run — deployment target
+- Google Translate API — translation
+- Google Search Grounding (optional for some features in the future)
+
+- Render/Vercel Run — deployment target
 
 ## Architecture
 **Frontend:**
@@ -202,7 +205,7 @@ npm run build
 See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Live Demo
-Coming soon.
+https://vote-wise-iota.vercel.app
 
 ## GitHub Repository
-[Insert Repo URL Here]
+https://github.com/RohanGawade257/VoteWise
